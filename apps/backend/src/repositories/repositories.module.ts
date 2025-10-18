@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../modules/users/user.entity';
 import { Customer } from '../modules/customers/customer.entity';
@@ -23,6 +23,7 @@ import { PayrollItemsRepository } from './payroll-items.repository';
 import { LoansRepository } from './loans.repository';
 import { DebtsRepository } from './debts.repository';
 
+@Global()
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -67,4 +68,3 @@ import { DebtsRepository } from './debts.repository';
   ],
 })
 export class RepositoriesModule {}
-
