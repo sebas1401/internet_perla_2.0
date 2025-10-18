@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import { useAuth } from '../hooks/useAuth';
+import { motion } from 'framer-motion';
 
 export default function Dashboard(){
   const { user } = useAuth();
@@ -8,14 +9,20 @@ export default function Dashboard(){
   useEffect(()=>{ api.get('/health').then(r=>setHealth(r.data)).catch(()=>setHealth({status:'error'})); },[]);
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold text-primary mb-2">Dashboard</h1>
-      <div className="text-sm text-gray-600 mb-4">Bienvenido, {user?.name || user?.email} ({user?.role})</div>
+      <motion.h1 className="text-3xl font-extrabold text-primary mb-1" initial={{opacity:0,y:8}} animate={{opacity:1,y:0}}>Dashboard</motion.h1>
+      <motion.div className="text-sm text-gray-600 mb-6" initial={{opacity:0}} animate={{opacity:1}}>Bienvenido, {user?.name || user?.email} ({user?.role})</motion.div>
       <div className="grid md:grid-cols-3 gap-4">
-        <div className="bg-white p-4 rounded shadow"><div className="font-semibold">Estado API</div><div className="text-sm">{health?.status||'...'}</div></div>
-        <div className="bg-white p-4 rounded shadow"><div className="font-semibold">Clientes</div><div className="text-sm">Gestiona tus clientes en la sección correspondiente</div></div>
-        <div className="bg-white p-4 rounded shadow"><div className="font-semibold">Perfil</div><div className="text-sm">Actualiza tu información y credenciales</div></div>
+        {[
+          { title:'Estado API', body:health?.status||'...' },
+          { title:'Clientes', body:'Gestiona tus clientes en la sección correspondiente' },
+          { title:'Perfil', body:'Actualiza tu información y credenciales' },
+        ].map((c,i)=> (
+          <motion.div key={i} className="bg-white p-4 rounded shadow card-hover" initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{delay:i*0.05}}>
+            <div className="font-semibold">{c.title}</div>
+            <div className="text-sm text-gray-600">{c.body}</div>
+          </motion.div>
+        ))}
       </div>
     </div>
   );
 }
-
