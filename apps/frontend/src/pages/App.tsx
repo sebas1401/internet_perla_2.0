@@ -8,6 +8,7 @@ import Attendance from './Attendance';
 import Inventory from './Inventory';
 import Finance from './Finance';
 import Customers from './Customers';
+import Workers from './Workers';
 import Profile from './Profile';
 import TasksAdmin from './TasksAdmin';
 import MyTasks from './MyTasks';
@@ -28,7 +29,7 @@ export default function App(){
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/" element={<Protected><AdminSwitch /></Protected>} />
-        <Route path="/customers" element={<Protected role="ADMIN"><AdminShell><Customers /></AdminShell></Protected>} />
+        <Route path="/workers" element={<Protected role="ADMIN"><AdminShell><Workers /></AdminShell></Protected>} />
         <Route path="/profile" element={<Protected><><Navbar /><Profile /></></Protected>} />
         <Route path="/attendance" element={<Protected role="ADMIN"><AdminShell><Attendance /></AdminShell></Protected>} />
         <Route path="/inventory" element={<Protected role="ADMIN"><AdminShell><Inventory /></AdminShell></Protected>} />

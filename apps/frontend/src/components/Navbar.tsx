@@ -9,7 +9,7 @@ export default function Navbar(){
       <nav className="flex gap-4 text-sm items-center">
         {user?.role === 'ADMIN' && (
           <>
-            <Link to="/customers" className="text-white/80 hover:text-white">Clientes</Link>
+            <Link to="/workers" className="text-white/80 hover:text-white">Trabajadores</Link>
             <Link to="/attendance" className="text-white/80 hover:text-white">Asistencia</Link>
             <Link to="/inventory" className="text-white/80 hover:text-white">Inventario</Link>
             <Link to="/finance" className="text-white/80 hover:text-white">Finanzas</Link>

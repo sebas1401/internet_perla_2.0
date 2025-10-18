@@ -26,7 +26,7 @@ export default function AdminShell({ children }: PropsWithChildren) {
           <NavLink to="/finance" className={linkCls}><DollarSign size={16}/> Finanzas</NavLink>
           <NavLink to="/inventory" className={linkCls}><Boxes size={16}/> Inventario</NavLink>
           <NavLink to="/tasks-admin" className={linkCls}><ClipboardList size={16}/> Tareas</NavLink>
-          <NavLink to="/customers" className={linkCls}><Users2 size={16}/> Clientes</NavLink>
+          <NavLink to="/workers" className={linkCls}><Users2 size={16}/> Trabajadores</NavLink>
         </nav>
         <div className="mt-auto flex flex-col gap-1">
           <button className="flex items-center gap-2 px-3 py-2 rounded-md text-white/80 hover:text-white hover:bg-white/10" onClick={()=>nav('/profile')}><Settings size={16}/> Configuración</button>
@@ -49,4 +49,3 @@ export default function AdminShell({ children }: PropsWithChildren) {
     </div>
   );
 }
-
