@@ -12,6 +12,7 @@ import Profile from './Profile';
 import TasksAdmin from './TasksAdmin';
 import MyTasks from './MyTasks';
 import Navbar from '../components/Navbar';
+import AdminShell from '../components/AdminShell';
 
 function Protected({ children, role }:{ children: JSX.Element; role?: 'ADMIN'|'USER' }){
   const { user } = useAuth();
@@ -26,13 +27,13 @@ export default function App(){
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/" element={<Protected><><Navbar /><RoleSwitch /></></Protected>} />
-        <Route path="/customers" element={<Protected role="ADMIN"><><Navbar /><Customers /></></Protected>} />
+        <Route path="/" element={<Protected><AdminSwitch /></Protected>} />
+        <Route path="/customers" element={<Protected role="ADMIN"><AdminShell><Customers /></AdminShell></Protected>} />
         <Route path="/profile" element={<Protected><><Navbar /><Profile /></></Protected>} />
-        <Route path="/attendance" element={<Protected role="ADMIN"><><Navbar /><Attendance /></></Protected>} />
-        <Route path="/inventory" element={<Protected role="ADMIN"><><Navbar /><Inventory /></></Protected>} />
-        <Route path="/finance" element={<Protected role="ADMIN"><><Navbar /><Finance /></></Protected>} />
-        <Route path="/tasks-admin" element={<Protected role="ADMIN"><><Navbar /><TasksAdmin /></></Protected>} />
+        <Route path="/attendance" element={<Protected role="ADMIN"><AdminShell><Attendance /></AdminShell></Protected>} />
+        <Route path="/inventory" element={<Protected role="ADMIN"><AdminShell><Inventory /></AdminShell></Protected>} />
+        <Route path="/finance" element={<Protected role="ADMIN"><AdminShell><Finance /></AdminShell></Protected>} />
+        <Route path="/tasks-admin" element={<Protected role="ADMIN"><AdminShell><TasksAdmin /></AdminShell></Protected>} />
         <Route path="/my-tasks" element={<Protected><><Navbar /><MyTasks /></></Protected>} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
@@ -44,4 +45,10 @@ function RoleSwitch(){
   const { user } = useAuth();
   if (user?.role === 'ADMIN') return <AdminPanel/>;
   return <Dashboard/>;
+}
+
+function AdminSwitch(){
+  const { user } = useAuth();
+  if (user?.role === 'ADMIN') return <AdminShell><AdminPanel/></AdminShell>;
+  return (<><Navbar /><Dashboard/></>);
 }
