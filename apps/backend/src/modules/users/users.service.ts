@@ -1,32 +1,31 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { User } from './user.entity';
 import { CreateUserDto, RegisterDto, UpdateUserDto } from './dto';
 import * as bcrypt from 'bcryptjs';
+import { UsersRepository } from '../../repositories/users.repository';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectRepository(User) private repo: Repository<User>) {}
+  constructor(private repo: UsersRepository) {}
 
-  findAll() { return this.repo.find(); }
+  findAll() { return this.repo.findAll(); }
   async findOne(id: string) {
-    const u = await this.repo.findOne({ where: { id } });
+    const u = await this.repo.findById(id);
     if (!u) throw new NotFoundException('User not found');
     return u;
   }
-  findByEmail(email: string) { return this.repo.findOne({ where: { email } }); }
+  findByEmail(email: string) { return this.repo.findByEmail(email); }
 
   async register(dto: RegisterDto) {
     const passwordHash = await bcrypt.hash(dto.password, 10);
     const count = await this.repo.count();
-    const u = this.repo.create({ email: dto.email, passwordHash, name: dto.name, role: count === 0 ? 'ADMIN' as any : undefined });
+    const u: Partial<User> = { email: dto.email, passwordHash, name: dto.name, role: count === 0 ? 'ADMIN' as any : undefined };
     return this.repo.save(u);
   }
 
   async create(dto: CreateUserDto) {
     const passwordHash = await bcrypt.hash(dto.password, 10);
-    const u = this.repo.create({ email: dto.email, passwordHash, role: dto.role, name: dto.name });
+    const u: Partial<User> = { email: dto.email, passwordHash, role: dto.role, name: dto.name };
     return this.repo.save(u);
   }
 

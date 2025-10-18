@@ -7,6 +7,7 @@ import { CustomersModule } from './modules/customers/customers.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { FinanceModule } from './modules/finance/finance.module';
+import { RepositoriesModule } from './repositories/repositories.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -27,6 +28,7 @@ import { HealthController } from './health.controller';
       }),
     }),
     AuthModule,
+    RepositoriesModule,
     UsersModule,
     CustomersModule,
     AttendanceModule,
