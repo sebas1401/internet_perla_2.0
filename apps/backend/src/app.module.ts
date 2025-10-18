@@ -1,0 +1,38 @@
+import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthModule } from './modules/auth/auth.module';
+import { UsersModule } from './modules/users/users.module';
+import { CustomersModule } from './modules/customers/customers.module';
+import { AttendanceModule } from './modules/attendance/attendance.module';
+import { InventoryModule } from './modules/inventory/inventory.module';
+import { FinanceModule } from './modules/finance/finance.module';
+import { HealthController } from './health.controller';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (cfg: ConfigService) => ({
+        type: 'postgres',
+        host: cfg.get('DB_HOST'),
+        port: parseInt(cfg.get('DB_PORT') || '5432', 10),
+        username: cfg.get('DB_USERNAME'),
+        password: cfg.get('DB_PASSWORD'),
+        database: cfg.get('DB_DATABASE'),
+        synchronize: cfg.get('DB_SYNC') === 'true',
+        autoLoadEntities: true,
+      }),
+    }),
+    AuthModule,
+    UsersModule,
+    CustomersModule,
+    AttendanceModule,
+    InventoryModule,
+    FinanceModule,
+  ],
+  controllers: [HealthController],
+})
+export class AppModule {}
