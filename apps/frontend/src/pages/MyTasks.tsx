@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import api from '../services/api';
+import api, { getApiOrigin } from '../services/api';
 
 type Task = { id:string; title:string; description:string; status:'PENDING'|'COMPLETED'; proofUrl?:string };
 
@@ -30,7 +30,7 @@ export default function MyTasks(){
                   <button className="bg-primary text-white rounded px-3 py-1" onClick={()=>complete(t.id)}>Marcar Completada</button>
                 </div>
               )}
-              {t.status==='COMPLETED' && t.proofUrl && <div className="mt-1"><a className="text-primary underline" href={t.proofUrl} target="_blank">Ver evidencia</a></div>}
+              {t.status==='COMPLETED' && t.proofUrl && <div className="mt-1"><a className="text-primary underline" href={`${getApiOrigin()}${t.proofUrl}`} target="_blank">Ver evidencia</a></div>}
             </li>
           ))}
           {tasks.length===0 && <li>Sin tareas asignadas</li>}
@@ -39,4 +39,3 @@ export default function MyTasks(){
     </div>
   );
 }
-

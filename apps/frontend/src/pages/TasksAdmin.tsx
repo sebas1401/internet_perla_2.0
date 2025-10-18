@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import api from '../services/api';
+import api, { getApiOrigin } from '../services/api';
 
 type User = { id:string; email:string; name?:string; role:'ADMIN'|'USER' };
 type Task = { id:string; title:string; description:string; status:'PENDING'|'COMPLETED'; assignedTo:User; createdAt:string; proofUrl?:string };
@@ -39,7 +39,7 @@ export default function TasksAdmin(){
               <div className="font-medium">{t.title} <span className="text-gray-500">({t.status})</span></div>
               <div className="text-gray-600">{t.description}</div>
               <div className="text-xs text-gray-500">Asignado a: {t.assignedTo?.name||t.assignedTo?.email} • {new Date(t.createdAt).toLocaleString()}</div>
-              {t.proofUrl && <div className="mt-1"><a className="text-primary underline" href={t.proofUrl} target="_blank">Ver evidencia</a></div>}
+              {t.proofUrl && <div className="mt-1"><a className="text-primary underline" href={`${getApiOrigin()}${t.proofUrl}`} target="_blank">Ver evidencia</a></div>}
             </li>
           ))}
           {tasks.length===0 && <li>Sin tareas</li>}
@@ -48,4 +48,3 @@ export default function TasksAdmin(){
     </div>
   );
 }
-
