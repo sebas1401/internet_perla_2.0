@@ -57,12 +57,7 @@ export class MessagesService {
     const base: { id: string; email: string; name?: string; lastAt?: any }[] = rows.map((r: any) => ({ id: r.id, email: r.email, name: r.name, lastAt: r.lastat || r.lastAt }));
     // If requester is USER, include all ADMINs even if no prior messages
     const me = await this.users.findOne({ where: { id: userId } });
-    if (me?.role === 'USER') {
-      const admins = await this.users.find({ where: { role: 'ADMIN' as any } });
-      admins.forEach(a => {
-        if (!base.find(b => b.id === a.id)) base.push({ id: a.id, email: a.email, name: a.name, lastAt: null });
-      });
-    } else if (me?.role === 'ADMIN') {
+    if (me) {
       const others = await this.users.find();
       others
         .filter(u => u.id !== userId)

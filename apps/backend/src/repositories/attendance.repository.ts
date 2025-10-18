@@ -8,5 +8,14 @@ export class AttendanceRepository {
   constructor(@InjectRepository(AttendanceRecord) private repo: Repository<AttendanceRecord>) {}
   list() { return this.repo.find({ order: { timestamp: 'DESC' } }); }
   save(entity: Partial<AttendanceRecord>) { return this.repo.save(entity); }
+
+  async hasInForToday(name: string) {
+    const count = await this.repo.createQueryBuilder('a')
+      .where('a.name = :name', { name })
+      .andWhere("DATE(a.timestamp) = CURRENT_DATE")
+      .andWhere('a.tipo = :tipo', { tipo: 'IN' })
+      .getCount();
+    return count > 0;
+  }
 }
 
