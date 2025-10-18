@@ -13,7 +13,11 @@ export default function Navbar(){
             <Link to="/attendance" className="text-primary">Asistencia</Link>
             <Link to="/inventory" className="text-primary">Inventario</Link>
             <Link to="/finance" className="text-primary">Finanzas</Link>
+            <Link to="/tasks-admin" className="text-primary">Tareas</Link>
           </>
+        )}
+        {user?.role === 'USER' && (
+          <Link to="/my-tasks" className="text-primary">Mis Tareas</Link>
         )}
         <Link to="/profile" className="text-primary">Perfil</Link>
         <span className="text-gray-600">{user?.email}</span>

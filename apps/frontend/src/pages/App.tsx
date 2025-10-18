@@ -9,6 +9,8 @@ import Inventory from './Inventory';
 import Finance from './Finance';
 import Customers from './Customers';
 import Profile from './Profile';
+import TasksAdmin from './TasksAdmin';
+import MyTasks from './MyTasks';
 import Navbar from '../components/Navbar';
 
 function Protected({ children, role }:{ children: JSX.Element; role?: 'ADMIN'|'USER' }){
@@ -30,6 +32,8 @@ export default function App(){
         <Route path="/attendance" element={<Protected role="ADMIN"><><Navbar /><Attendance /></></Protected>} />
         <Route path="/inventory" element={<Protected role="ADMIN"><><Navbar /><Inventory /></></Protected>} />
         <Route path="/finance" element={<Protected role="ADMIN"><><Navbar /><Finance /></></Protected>} />
+        <Route path="/tasks-admin" element={<Protected role="ADMIN"><><Navbar /><TasksAdmin /></></Protected>} />
+        <Route path="/my-tasks" element={<Protected><><Navbar /><MyTasks /></></Protected>} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </AuthProvider>

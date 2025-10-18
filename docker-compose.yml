@@ -27,6 +27,8 @@ services:
       - db
     ports:
       - "3000:3000"
+    volumes:
+      - uploads:/app/uploads
   frontend:
     build: ./apps/frontend
     environment:
@@ -37,3 +39,4 @@ services:
       - "3001:5173"
 volumes:
   ip_db_data:
+  uploads:

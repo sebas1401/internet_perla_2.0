@@ -8,11 +8,18 @@ import { AttendanceModule } from './modules/attendance/attendance.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { FinanceModule } from './modules/finance/finance.module';
 import { RepositoriesModule } from './repositories/repositories.module';
+import { TasksModule } from './modules/tasks/tasks.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 import { HealthController } from './health.controller';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ServeStaticModule.forRoot({
+      rootPath: join(process.cwd(), 'uploads'),
+      serveRoot: '/uploads',
+    }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -34,6 +41,7 @@ import { HealthController } from './health.controller';
     AttendanceModule,
     InventoryModule,
     FinanceModule,
+    TasksModule,
   ],
   controllers: [HealthController],
 })
