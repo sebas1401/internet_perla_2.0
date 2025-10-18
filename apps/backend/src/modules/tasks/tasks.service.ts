@@ -4,18 +4,23 @@ import { Repository } from 'typeorm';
 import { Task } from './task.entity';
 import { CreateTaskDto } from './dto';
 import { User } from '../users/user.entity';
+import { RealtimeGateway } from '../../realtime/realtime.gateway';
 
 @Injectable()
 export class TasksService {
   constructor(
     @InjectRepository(Task) private tasks: Repository<Task>,
     @InjectRepository(User) private users: Repository<User>,
+    private rt: RealtimeGateway,
   ) {}
 
   async create(dto: CreateTaskDto) {
     const assignedTo = await this.users.findOne({ where: { id: dto.userId } });
     if (!assignedTo) throw new NotFoundException('User not found');
-    return this.tasks.save(this.tasks.create({ title: dto.title, description: dto.description, assignedTo }));
+    const saved = await this.tasks.save(this.tasks.create({ title: dto.title, description: dto.description, assignedTo }));
+    this.rt.emitToUser(assignedTo.id, 'task:created', saved);
+    this.rt.broadcastToAdmins('task:created', saved);
+    return saved;
   }
 
   listAll() { return this.tasks.find({ order: { createdAt: 'DESC' } }); }
@@ -29,7 +34,10 @@ export class TasksService {
     t.status = 'COMPLETED';
     t.completedAt = new Date();
     t.proofUrl = proofUrl;
-    return this.tasks.save(t);
+    const saved = await this.tasks.save(t);
+    if (t.assignedTo?.id) this.rt.emitToUser(t.assignedTo.id, 'task:updated', saved);
+    this.rt.broadcastToAdmins('task:updated', saved);
+    return saved;
   }
 }
 

@@ -2,7 +2,7 @@ import { PropsWithChildren } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { motion } from 'framer-motion';
-import { Home, Clock, Boxes, DollarSign, ClipboardList, Users2, LogOut, Settings } from 'lucide-react';
+import { Home, Clock, Boxes, DollarSign, ClipboardList, Users2, LogOut, Settings, MessageSquare } from 'lucide-react';
 
 export default function AdminShell({ children }: PropsWithChildren) {
   const { user, logout } = useAuth();
@@ -27,6 +27,7 @@ export default function AdminShell({ children }: PropsWithChildren) {
           <NavLink to="/inventory" className={linkCls}><Boxes size={16}/> Inventario</NavLink>
           <NavLink to="/tasks-admin" className={linkCls}><ClipboardList size={16}/> Tareas</NavLink>
           <NavLink to="/workers" className={linkCls}><Users2 size={16}/> Trabajadores</NavLink>
+          <NavLink to="/messages" className={linkCls}><MessageSquare size={16}/> Mensajes</NavLink>
         </nav>
         <div className="mt-auto flex flex-col gap-1">
           <button className="flex items-center gap-2 px-3 py-2 rounded-md text-white/80 hover:text-white hover:bg-white/10" onClick={()=>nav('/profile')}><Settings size={16}/> Configuración</button>

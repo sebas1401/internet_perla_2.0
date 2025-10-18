@@ -12,6 +12,7 @@ import Workers from './Workers';
 import Profile from './Profile';
 import TasksAdmin from './TasksAdmin';
 import MyTasks from './MyTasks';
+import MessagesPage from './Messages';
 import Navbar from '../components/Navbar';
 import AdminShell from '../components/AdminShell';
 
@@ -30,6 +31,7 @@ export default function App(){
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/" element={<Protected><AdminSwitch /></Protected>} />
         <Route path="/workers" element={<Protected role="ADMIN"><AdminShell><Workers /></AdminShell></Protected>} />
+        <Route path="/messages" element={<Protected><MessagesRoute/></Protected>} />
         <Route path="/profile" element={<Protected><><Navbar /><Profile /></></Protected>} />
         <Route path="/attendance" element={<Protected role="ADMIN"><AdminShell><Attendance /></AdminShell></Protected>} />
         <Route path="/inventory" element={<Protected role="ADMIN"><AdminShell><Inventory /></AdminShell></Protected>} />
@@ -52,4 +54,10 @@ function AdminSwitch(){
   const { user } = useAuth();
   if (user?.role === 'ADMIN') return <AdminShell><AdminPanel/></AdminShell>;
   return (<><Navbar /><Dashboard/></>);
+}
+
+function MessagesRoute(){
+  const { user } = useAuth();
+  if (user?.role === 'ADMIN') return <AdminShell><MessagesPage/></AdminShell>;
+  return <MessagesPage/>;
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import api, { getApiOrigin } from '../services/api';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { useSocket } from '../hooks/useSocket';
 
 type User = { id:string; email:string; name?:string; role:'ADMIN'|'USER' };
 type Task = { id:string; title:string; description:string; status:'PENDING'|'COMPLETED'; assignedTo:User; createdAt:string; proofUrl?:string };
@@ -18,7 +19,15 @@ export default function TasksAdmin(){
     setUsers(u.data.value || u.data);
     setTasks(t.data);
   };
+  const { socket } = useSocket();
   useEffect(()=>{ load(); },[]);
+  useEffect(()=>{
+    if (!socket) return;
+    const refresh = ()=> load();
+    socket.on('task:created', refresh);
+    socket.on('task:updated', refresh);
+    return ()=>{ socket.off('task:created', refresh); socket.off('task:updated', refresh); };
+  },[socket]);
   const create = async ()=>{ if(!form.userId||!form.title) return; await api.post('/tasks', form); setForm({ userId:'', title:'', description:'' }); toast.success('Tarea creada'); load(); };
 
   return (

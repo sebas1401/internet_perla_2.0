@@ -14,10 +14,14 @@ export default function Navbar(){
             <Link to="/inventory" className="text-white/80 hover:text-white">Inventario</Link>
             <Link to="/finance" className="text-white/80 hover:text-white">Finanzas</Link>
             <Link to="/tasks-admin" className="text-white/80 hover:text-white">Tareas</Link>
+            <Link to="/messages" className="text-white/80 hover:text-white">Mensajes</Link>
           </>
         )}
         {user?.role === 'USER' && (
-          <Link to="/my-tasks" className="text-white/80 hover:text-white">Mis Tareas</Link>
+          <>
+            <Link to="/my-tasks" className="text-white/80 hover:text-white">Mis Tareas</Link>
+            <Link to="/messages" className="text-white/80 hover:text-white">Mensajes</Link>
+          </>
         )}
         <Link to="/profile" className="text-white/80 hover:text-white">Perfil</Link>
         <span className="text-white/80 hidden md:inline">{user?.email}</span>

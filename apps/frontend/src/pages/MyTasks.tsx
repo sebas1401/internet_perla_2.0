@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import api, { getApiOrigin } from '../services/api';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { useSocket } from '../hooks/useSocket';
 
 type Task = { id:string; title:string; description:string; status:'PENDING'|'COMPLETED'; proofUrl?:string };
 
@@ -9,7 +10,15 @@ export default function MyTasks(){
   const [tasks,setTasks] = useState<Task[]>([]);
   const [files,setFiles] = useState<Record<string, File|undefined>>({});
   const load = async ()=>{ const {data} = await api.get('/tasks/mine'); setTasks(data); };
+  const { socket } = useSocket();
   useEffect(()=>{ load(); },[]);
+  useEffect(()=>{
+    if (!socket) return;
+    const refresh = ()=> load();
+    socket.on('task:created', refresh);
+    socket.on('task:updated', refresh);
+    return ()=>{ socket.off('task:created', refresh); socket.off('task:updated', refresh); };
+  },[socket]);
   const complete = async (id:string)=>{
     const fd = new FormData();
     const f = files[id];
