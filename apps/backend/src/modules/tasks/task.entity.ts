@@ -13,6 +13,5 @@ export class Task {
   @CreateDateColumn() createdAt: Date;
   @UpdateDateColumn() updatedAt: Date;
   @Column({ type: 'timestamptz', nullable: true }) completedAt?: Date | null;
-  @Column({ nullable: true }) proofUrl?: string | null;
+  @Column({ type: 'text', nullable: true }) proofUrl?: string | null;
 }
-
