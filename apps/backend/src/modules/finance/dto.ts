@@ -71,3 +71,11 @@ export class CloseDayDto {
 export class DailySalaryCandidateDto {
   @IsDateString() date: string;
 }
+
+export class UserCloseDayDto {
+  @IsDateString() date: string;
+}
+
+export class ReopenDayDto {
+  @IsDateString() date: string;
+}

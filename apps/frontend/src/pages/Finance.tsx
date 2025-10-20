@@ -34,8 +34,19 @@ type User = {
   role: "ADMIN" | "USER";
 };
 
-type SalaryCandidate = { userId: string; userName: string; dailySalary: number };
-type SalaryAccrual = { id: string; date: string; userId: string; userName?: string; amount: number };
+type SalaryCandidate = {
+  userId: string;
+  userName: string;
+  dailySalary: number;
+};
+type SalaryAccrual = {
+  id: string;
+  date: string;
+  userId: string;
+  userName?: string;
+  amount: number;
+};
+// Weekly payroll summary types removed
 
 export default function Finance() {
   const { user: authUser } = useAuth();
@@ -51,6 +62,11 @@ export default function Finance() {
     const tz = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
     return tz.toISOString().slice(0, 10);
   });
+  // Week number for "Semana" mode; derived from baseDate year/week
+  const [weekNumber, setWeekNumber] = useState<number>(() => {
+    const { week } = isoWeekInfo(new Date(baseDate + "T00:00:00"));
+    return Math.min(Math.max(week, 1), 52);
+  });
   // Admin-only user filter
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
@@ -61,11 +77,14 @@ export default function Finance() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | undefined>();
 
-  // Salaries (admin)
-  const [salaryCandidates, setSalaryCandidates] = useState<SalaryCandidate[]>([]);
-  const [salaryInclude, setSalaryInclude] = useState<Record<string, boolean>>({});
-  const [salaryAccruals, setSalaryAccruals] = useState<SalaryAccrual[]>([]);
-  const [salaryLoading, setSalaryLoading] = useState(false);
+  // Salaries section removed; keep only weekly payroll summary
+  // Weekly payroll/attendance section removed completely
+
+  // Movimientos del día
+  const [movementsLoading, setMovementsLoading] = useState(false);
+  const [movementsError, setMovementsError] = useState<string | undefined>();
+  const [dayIncomes, setDayIncomes] = useState<CashEntry[]>([]);
+  const [dayExpenses, setDayExpenses] = useState<CashEntry[]>([]);
 
   // Fetch users for admin filter
   useEffect(() => {
@@ -105,37 +124,13 @@ export default function Finance() {
     }
   }
 
-  // Load salary candidates for selected day (admin)
-  useEffect(() => {
-    if (authUser?.role !== "ADMIN") return;
-    (async () => {
-      setSalaryLoading(true);
-      try {
-        const { data } = await api.get("/finance/daily-salaries", { params: { date: baseDate } });
-        const list = Array.isArray(data) ? data : [];
-        setSalaryCandidates(list);
-        // initialize include map to true for all
-        const map: Record<string, boolean> = {};
-        for (const c of list) map[c.userId] = true;
-        setSalaryInclude(map);
-        // if already closed, fetch accruals
-        const isClosed = summaries.some((s) => s.date === baseDate && !!s.closedBy);
-        if (isClosed) {
-          const { data: acc } = await api.get("/finance/daily-salaries/accruals", { params: { date: baseDate } });
-          setSalaryAccruals(Array.isArray(acc) ? acc : []);
-        } else {
-          setSalaryAccruals([]);
-        }
-      } catch {
-        setSalaryCandidates([]);
-        setSalaryInclude({});
-        setSalaryAccruals([]);
-      } finally {
-        setSalaryLoading(false);
-      }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authUser?.role, baseDate, summaries]);
+  // Removed daily salaries loader
+
+  // Weekly attendance fetcher (Mon-Sun for week of baseDate)
+  // Weekly attendance removed
+
+  // Load weekly attendance summary (Mon-Sun) for the week of baseDate
+  // Weekly attendance effect removed
 
   // Detail
   async function loadDetail(date: string) {
@@ -161,11 +156,88 @@ export default function Finance() {
     }
   }
 
+  // Movements (by date and user filter)
+  async function loadMovements(date: string) {
+    try {
+      setMovementsLoading(true);
+      setMovementsError(undefined);
+      const params: any = {};
+      if (authUser?.role === "ADMIN" && selectedUserId)
+        params.userId = selectedUserId;
+      if (filterMode === "DAY") {
+        params.date = date;
+        const { data } = await api.get("/finance/cash-cut", { params });
+        const entries: CashEntry[] = (data.entries || []).map((e: any) => ({
+          ...e,
+          amount:
+            typeof e.amount === "string" ? parseFloat(e.amount) : e.amount,
+        }));
+        setDayIncomes(entries.filter((e) => e.type === "INCOME"));
+        setDayExpenses(entries.filter((e) => e.type === "EXPENSE"));
+      } else {
+        // Semana: llamadas por cada día del rango y agregación
+        const { from, to } = weekRange(date);
+        const days = isoDatesBetween(from, to);
+        const results = await Promise.all(
+          days.map((d) =>
+            api.get("/finance/cash-cut", {
+              params: {
+                date: d,
+                ...(params.userId ? { userId: params.userId } : {}),
+              },
+            })
+          )
+        );
+        const allEntriesRaw = results.flatMap((r) => r.data?.entries || []);
+        const entries: CashEntry[] = allEntriesRaw.map((e: any) => ({
+          ...e,
+          amount:
+            typeof e.amount === "string" ? parseFloat(e.amount) : e.amount,
+        }));
+        setDayIncomes(entries.filter((e) => e.type === "INCOME"));
+        setDayExpenses(entries.filter((e) => e.type === "EXPENSE"));
+      }
+    } catch (e: any) {
+      setMovementsError(
+        e?.response?.data?.message || "Error al cargar movimientos del día"
+      );
+      setDayIncomes([]);
+      setDayExpenses([]);
+    } finally {
+      setMovementsLoading(false);
+    }
+  }
+
+  function weekShortLabel(dateStr: string) {
+    const { from, to } = weekRange(dateStr);
+    const d1 = new Date(from + "T00:00:00");
+    const d2 = new Date(to + "T00:00:00");
+    if (
+      d1.getMonth() === d2.getMonth() &&
+      d1.getFullYear() === d2.getFullYear()
+    ) {
+      return `${d1.getDate()}–${d2.getDate()} ${
+        MONTHS_ES_ABBR[d1.getMonth()]
+      } ${d1.getFullYear()}`;
+    }
+    return `${d1.getDate()} ${
+      MONTHS_ES_ABBR[d1.getMonth()]
+    } ${d1.getFullYear()}–${d2.getDate()} ${
+      MONTHS_ES_ABBR[d2.getMonth()]
+    } ${d2.getFullYear()}`;
+  }
+
   // Refresh open detail when user filter changes
   useEffect(() => {
     if (detailDate) loadDetail(detailDate);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedUserId]);
+
+  // Load movements whenever baseDate or selectedUserId changes
+  useEffect(() => {
+    if (baseDate) loadMovements(baseDate);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [baseDate, selectedUserId]);
 
   // Realtime
   useEffect(() => {
@@ -181,19 +253,78 @@ export default function Finance() {
     const refreshDetail = (payload?: any) => {
       if (detailDate && payload?.date === detailDate) loadDetail(detailDate);
     };
+    const refreshMovements = (payload?: any) => {
+      if (!payload?.date) return loadMovements(baseDate);
+      if (filterMode === "DAY") {
+        if (payload.date === baseDate) loadMovements(baseDate);
+      } else {
+        const { from, to } = weekRange(baseDate);
+        if (payload.date >= from && payload.date <= to) {
+          loadMovements(baseDate);
+        }
+      }
+    };
+    // Weekly attendance listeners removed
     socket.on("cash:entry-added", refresh);
     socket.on("cash:day-closed", refresh);
+    socket.on("cash:day-reopened", refresh);
     socket.on("cash:entry-added", refreshDetail);
     socket.on("cash:day-closed", refreshDetail);
+    socket.on("cash:day-reopened", refreshDetail);
+    socket.on("cash:entry-added", refreshMovements);
+    socket.on("cash:day-closed", refreshMovements);
+    socket.on("cash:day-reopened", refreshMovements);
+    // Weekly attendance listeners removed
     return () => {
       socket.off("cash:entry-added", refresh);
       socket.off("cash:day-closed", refresh);
+      socket.off("cash:day-reopened", refresh);
       socket.off("cash:entry-added", refreshDetail);
       socket.off("cash:day-closed", refreshDetail);
+      socket.off("cash:day-reopened", refreshDetail);
+      socket.off("cash:entry-added", refreshMovements);
+      socket.off("cash:day-closed", refreshMovements);
+      socket.off("cash:day-reopened", refreshMovements);
+      // Weekly attendance listeners removed
     };
   }, [socket, filterMode, baseDate, detailDate, selectedUserId]);
 
   // Helpers
+  function isoWeekInfo(date: Date) {
+    // ISO-8601: weeks start on Monday; week 1 is the week with Jan 4.
+    const d = new Date(
+      Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
+    );
+    // Move to nearest Thursday
+    const dayNum = (d.getUTCDay() + 6) % 7; // Mon=0..Sun=6
+    d.setUTCDate(d.getUTCDate() + 3 - dayNum); // now on Thursday of this week
+    const isoYear = d.getUTCFullYear();
+    const firstThursday = new Date(Date.UTC(isoYear, 0, 4));
+    const firstDayNum = (firstThursday.getUTCDay() + 6) % 7;
+    firstThursday.setUTCDate(firstThursday.getUTCDate() + 3 - firstDayNum); // Thursday of week 1
+    const week =
+      1 + Math.round((d.getTime() - firstThursday.getTime()) / 604800000); // 7*24*3600*1000
+    return { week, year: isoYear };
+  }
+
+  function mondayOfISOWeek(week: number, year: number) {
+    // ISO-8601 week calculation anchored at Jan 4; Monday is start of the week
+    const jan4 = new Date(Date.UTC(year, 0, 4));
+    const jan4DayNum = (jan4.getUTCDay() + 6) % 7; // Mon=0..Sun=6
+    const mondayWeek1 = new Date(jan4);
+    mondayWeek1.setUTCDate(jan4.getUTCDate() - jan4DayNum); // Monday of week 1
+    const monday = new Date(mondayWeek1);
+    monday.setUTCDate(mondayWeek1.getUTCDate() + (week - 1) * 7);
+    return monday;
+  }
+
+  function toIsoDate(d: Date) {
+    // Always produce YYYY-MM-DD in UTC by zeroing time; avoid double TZ compensation
+    const copy = new Date(d);
+    copy.setHours(0, 0, 0, 0);
+    return copy.toISOString().slice(0, 10);
+  }
+
   function weekRange(dateStr: string) {
     const d = new Date(dateStr + "T00:00:00");
     const day = d.getDay();
@@ -202,11 +333,106 @@ export default function Finance() {
     monday.setDate(d.getDate() + diffToMonday);
     const sunday = new Date(monday);
     sunday.setDate(monday.getDate() + 6);
-    const toISO = (x: Date) => {
-      const tz = new Date(x.getTime() - x.getTimezoneOffset() * 60000);
-      return tz.toISOString().slice(0, 10);
-    };
-    return { from: toISO(monday), to: toISO(sunday) };
+    return { from: toIsoDate(monday), to: toIsoDate(sunday) };
+  }
+
+  function isoDatesBetween(from: string, to: string) {
+    const start = new Date(from + "T00:00:00");
+    const end = new Date(to + "T00:00:00");
+    const out: string[] = [];
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      out.push(toIsoDate(d));
+    }
+    return out;
+  }
+
+  // Keep weekNumber in sync with baseDate
+  useEffect(() => {
+    const info = isoWeekInfo(new Date(baseDate + "T00:00:00"));
+    const next = Math.min(Math.max(info.week, 1), 52);
+    setWeekNumber((prev) => (prev === next ? prev : next));
+  }, [baseDate]);
+
+  // Format helpers for dynamic text
+  const MONTHS_ES = [
+    "enero",
+    "febrero",
+    "marzo",
+    "abril",
+    "mayo",
+    "junio",
+    "julio",
+    "agosto",
+    "septiembre",
+    "octubre",
+    "noviembre",
+    "diciembre",
+  ];
+
+  const MONTHS_ES_ABBR = [
+    "ene",
+    "feb",
+    "mar",
+    "abr",
+    "may",
+    "jun",
+    "jul",
+    "ago",
+    "sep",
+    "oct",
+    "nov",
+    "dic",
+  ];
+
+  function formatDateEs(d: Date) {
+    const day = d.getDate();
+    const month = MONTHS_ES[d.getMonth()];
+    const year = d.getFullYear();
+    return `${day} de ${month} de ${year}`;
+  }
+
+  function dynamicFilterText() {
+    if (filterMode === "DAY") {
+      const d = new Date(baseDate + "T00:00:00");
+      return `Mostrando datos del ${d.toLocaleDateString()}.`;
+    } else {
+      const { from, to } = weekRange(baseDate);
+      const d1 = new Date(from + "T00:00:00");
+      const d2 = new Date(to + "T00:00:00");
+      if (
+        d1.getMonth() === d2.getMonth() &&
+        d1.getFullYear() === d2.getFullYear()
+      ) {
+        // Same month/year
+        return `Semana ${weekNumber}: del ${d1.getDate()} al ${d2.getDate()} de ${
+          MONTHS_ES[d1.getMonth()]
+        } de ${d1.getFullYear()}.`;
+      }
+      // Different months/years
+      return `Semana ${weekNumber}: del ${formatDateEs(d1)} al ${formatDateEs(
+        d2
+      )}.`;
+    }
+  }
+
+  function weekOptionLabel(week: number, year: number) {
+    const monday = mondayOfISOWeek(week, year);
+    const sunday = new Date(monday);
+    sunday.setUTCDate(monday.getUTCDate() + 6);
+    const d1 = monday;
+    const d2 = sunday;
+    const sameMonth =
+      d1.getUTCMonth() === d2.getUTCMonth() &&
+      d1.getUTCFullYear() === d2.getUTCFullYear();
+    if (sameMonth) {
+      return `Semana ${week} (${d1.getUTCDate()}–${d2.getUTCDate()} ${
+        MONTHS_ES_ABBR[d1.getUTCMonth()]
+      })`;
+    }
+    // Cross-month or cross-year
+    return `Semana ${week} (${d1.getUTCDate()} ${
+      MONTHS_ES_ABBR[d1.getUTCMonth()]
+    }–${d2.getUTCDate()} ${MONTHS_ES_ABBR[d2.getUTCMonth()]})`;
   }
 
   async function fetchSummaries(mode: "DAY" | "WEEK", dateStr: string) {
@@ -220,6 +446,9 @@ export default function Finance() {
       return data as CashSummary[];
     } else {
       const { from, to } = weekRange(dateStr);
+      // Debug: verify computed range matches selection
+      // eslint-disable-next-line no-console
+      console.debug("Semana seleccionada", { baseDate: dateStr, from, to });
       const { data } = await api.get("/finance/cash-summaries", {
         params: { from, to, ...baseParams },
       });
@@ -256,23 +485,9 @@ export default function Finance() {
       `Vas a cerrar el día ${new Date(date).toLocaleDateString()}. ¿Confirmas?`
     );
     if (!ok) return;
-    const payload: any = { date };
-    if (authUser?.role === "ADMIN") {
-      const includeUserIds = Object.entries(salaryInclude)
-        .filter(([, v]) => v)
-        .map(([k]) => k);
-      if (includeUserIds.length) payload.includeUserIds = includeUserIds;
-    }
-    await api.post("/finance/cash-summaries/close-day", payload);
+    await api.post("/finance/cash-summaries/close-day", { date });
     const s = await fetchSummaries(filterMode, baseDate);
     setSummaries(normalizeSummaries(s));
-    // refresh accruals post-close
-    if (authUser?.role === "ADMIN") {
-      try {
-        const { data: acc } = await api.get("/finance/daily-salaries/accruals", { params: { date } });
-        setSalaryAccruals(Array.isArray(acc) ? acc : []);
-      } catch {}
-    }
   };
 
   const fmt = (n: number) => `Q ${Number.isFinite(n) ? n.toFixed(2) : "0.00"}`;
@@ -283,13 +498,11 @@ export default function Finance() {
       {loading && <LoadingState message="Cargando finanzas..." />}
       {error && <ErrorState message={error} onRetry={load} />}
 
-  <div className="bg-white rounded shadow p-4">
+      <div className="bg-white rounded shadow p-4">
         <div className="flex flex-col md:flex-row md:items-end gap-3 md:justify-between">
           <div>
             <h2 className="font-semibold mb-1">Cortes de Caja</h2>
-            <p className="text-xs text-gray-500">
-              Filtra por día o semana; cierra el día para guardar el snapshot.
-            </p>
+            <p className="text-xs text-gray-500">Filtra por día o semana.</p>
           </div>
           <div className="flex flex-wrap gap-2 items-center">
             <select
@@ -300,12 +513,53 @@ export default function Finance() {
               <option value="DAY">Día</option>
               <option value="WEEK">Semana</option>
             </select>
-            <input
-              type="date"
-              className="border rounded px-2 py-1"
-              value={baseDate}
-              onChange={(e) => setBaseDate(e.target.value)}
-            />
+            {filterMode === "DAY" ? (
+              <input
+                type="date"
+                className="border rounded px-2 py-1"
+                value={baseDate}
+                onChange={(e) => setBaseDate(e.target.value)}
+              />
+            ) : (
+              <div className="flex items-center gap-2">
+                <label
+                  className="text-xs text-gray-600"
+                  title="Número de semana (1-52)"
+                >
+                  Semana:
+                </label>
+                <select
+                  className="border rounded px-2 py-1"
+                  value={weekNumber}
+                  onChange={(e) => {
+                    const next = Math.min(
+                      Math.max(parseInt(e.target.value || "1", 10), 1),
+                      52
+                    );
+                    setWeekNumber(next);
+                    // compute Monday from week/year based on current baseDate year
+                    const { year } = isoWeekInfo(
+                      new Date(baseDate + "T00:00:00")
+                    );
+                    const monday = mondayOfISOWeek(next, year);
+                    // Avoid manual timezone compensation; use ISO date directly
+                    setBaseDate(monday.toISOString().slice(0, 10));
+                  }}
+                >
+                  {Array.from({ length: 52 }).map((_, i) => {
+                    const { year } = isoWeekInfo(
+                      new Date(baseDate + "T00:00:00")
+                    );
+                    const w = i + 1;
+                    return (
+                      <option key={w} value={w}>
+                        {weekOptionLabel(w, year)}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+            )}
             {authUser?.role === "ADMIN" && (
               <div className="flex items-center gap-2">
                 <label className="text-xs text-gray-600">Usuario:</label>
@@ -326,6 +580,10 @@ export default function Finance() {
                 </select>
               </div>
             )}
+          </div>
+          {/* Dynamic filter text */}
+          <div className="text-xs text-gray-600 mt-2">
+            {dynamicFilterText()}
           </div>
         </div>
         <div className="grid md:grid-cols-3 gap-4 mt-4">
@@ -422,103 +680,91 @@ export default function Finance() {
         </div>
       </div>
 
-      {/* Sueldos del día (solo ADMIN) */}
-      {authUser?.role === "ADMIN" && (
-        <div className="bg-white rounded shadow p-4">
-          <div className="flex items-center justify-between mb-3">
+      {/* Sueldos del día: eliminado */}
+
+      {/* Resumen semanal de sueldos eliminado */}
+
+      {/* Movimientos del día / semana */}
+      <div className="bg-white rounded shadow p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-semibold">
+            {filterMode === "DAY"
+              ? "Movimientos del día"
+              : `Movimientos de la semana (${weekShortLabel(baseDate)})`}
+          </h2>
+          <div className="text-sm text-gray-600">
+            {filterMode === "DAY"
+              ? new Date(baseDate).toLocaleDateString()
+              : weekShortLabel(baseDate)}
+          </div>
+        </div>
+        {movementsLoading ? (
+          <div className="text-sm text-gray-600">Cargando movimientos...</div>
+        ) : movementsError ? (
+          <div className="text-sm text-red-600">{movementsError}</div>
+        ) : (
+          <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <h2 className="font-semibold">Sueldos del día</h2>
-              <p className="text-xs text-gray-500">Empleados con movimientos en {new Date(baseDate).toLocaleDateString()}.</p>
+              <div className="text-sm text-gray-600 mb-2">Ingresos</div>
+              {dayIncomes.length === 0 ? (
+                <div className="text-sm text-gray-500">Sin ingresos.</div>
+              ) : (
+                <ul className="divide-y">
+                  {dayIncomes.map((e) => {
+                    const showUser =
+                      authUser?.role === "ADMIN" && !selectedUserId;
+                    const who = e.createdByName || e.createdBy || "";
+                    return (
+                      <li key={e.id} className="py-2">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="text-sm text-gray-800 truncate">
+                            {e.description}
+                            {showUser && who ? (
+                              <span className="text-gray-500"> — {who}</span>
+                            ) : null}
+                          </div>
+                          <div className="text-sm font-medium text-gray-900 min-w-[6rem] text-right">
+                            {fmt(Number(e.amount) || 0)}
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
             </div>
-            <div className="text-sm text-gray-600">
-              Fecha: {new Date(baseDate).toLocaleDateString()}
+            <div>
+              <div className="text-sm text-gray-600 mb-2">Egresos</div>
+              {dayExpenses.length === 0 ? (
+                <div className="text-sm text-gray-500">Sin egresos.</div>
+              ) : (
+                <ul className="divide-y">
+                  {dayExpenses.map((e) => {
+                    const showUser =
+                      authUser?.role === "ADMIN" && !selectedUserId;
+                    const who = e.createdByName || e.createdBy || "";
+                    return (
+                      <li key={e.id} className="py-2">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="text-sm text-gray-800 truncate">
+                            {e.description}
+                            {showUser && who ? (
+                              <span className="text-gray-500"> — {who}</span>
+                            ) : null}
+                          </div>
+                          <div className="text-sm font-medium text-gray-900 min-w-[6rem] text-right">
+                            {fmt(Number(e.amount) || 0)}
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
             </div>
           </div>
-          {salaryLoading ? (
-            <div className="text-sm text-gray-600">Cargando sueldos...</div>
-          ) : (
-            <>
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead className="bg-gray-100">
-                    <tr>
-                      <th className="px-3 py-2 text-left">Incluir</th>
-                      <th className="px-3 py-2 text-left">Empleado</th>
-                      <th className="px-3 py-2 text-right">Sueldo diario</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {salaryCandidates.map((c) => {
-                      const included = !!salaryInclude[c.userId];
-                      return (
-                        <tr key={c.userId} className="border-t">
-                          <td className="px-3 py-2">
-                            <input
-                              type="checkbox"
-                              checked={included}
-                              disabled={summaries.some((s) => s.date === baseDate && !!s.closedBy)}
-                              onChange={(e) =>
-                                setSalaryInclude((m) => ({ ...m, [c.userId]: e.target.checked }))
-                              }
-                            />
-                          </td>
-                          <td className="px-3 py-2">{c.userName}</td>
-                          <td className="px-3 py-2 text-right">{fmt(Number(c.dailySalary) || 0)}</td>
-                        </tr>
-                      );
-                    })}
-                    {salaryCandidates.length === 0 && (
-                      <tr>
-                        <td className="px-3 py-3 text-gray-500" colSpan={3}>
-                          Sin empleados con movimientos hoy.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-              <div className="flex items-center justify-between mt-3">
-                <div className="text-sm text-gray-700">
-                  Total sueldos: {(() => {
-                    const total = salaryCandidates.reduce((a, c) => a + ((salaryInclude[c.userId] ? Number(c.dailySalary) : 0) || 0), 0);
-                    return fmt(total);
-                  })()}
-                  <span className="ml-2 text-xs text-gray-500">Impacto en balance: disminuye en ese monto al cerrar.</span>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    className="text-sm text-primary hover:underline"
-                    disabled={summaries.some((s) => s.date === baseDate && !!s.closedBy) || salaryCandidates.length === 0}
-                    onClick={() => {
-                      const all: Record<string, boolean> = {};
-                      for (const c of salaryCandidates) all[c.userId] = true;
-                      setSalaryInclude(all);
-                    }}
-                  >
-                    Incluir todos
-                  </button>
-                  <button
-                    className="text-sm text-red-600 hover:underline"
-                    disabled={summaries.some((s) => s.date === baseDate && !!s.closedBy) || salaryCandidates.length === 0}
-                    onClick={() => {
-                      const none: Record<string, boolean> = {};
-                      for (const c of salaryCandidates) none[c.userId] = false;
-                      setSalaryInclude(none);
-                    }}
-                  >
-                    Excluir todos
-                  </button>
-                </div>
-              </div>
-              {salaryAccruals.length > 0 && (
-                <div className="mt-4 text-xs text-gray-600">
-                  Día ya cerrado: {salaryAccruals.length} sueldos registrados. Total: {fmt(salaryAccruals.reduce((a, x) => a + (Number(x.amount) || 0), 0))}
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      )}
+        )}
+      </div>
 
       {detailDate && (
         <div className="bg-white rounded shadow p-4">

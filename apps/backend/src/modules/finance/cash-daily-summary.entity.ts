@@ -15,5 +15,6 @@ export class CashDailySummary {
   @Column("decimal", { precision: 12, scale: 2, default: 0 }) expenses: number;
   @Column("decimal", { precision: 12, scale: 2, default: 0 }) balance: number;
   @CreateDateColumn() createdAt: Date;
-  @Column({ nullable: true }) closedBy?: string; // email del admin
+  @Column({ type: "varchar", length: 255, nullable: true })
+  closedBy?: string; // email del admin
 }

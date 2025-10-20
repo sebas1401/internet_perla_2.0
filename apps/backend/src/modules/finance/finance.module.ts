@@ -6,9 +6,9 @@ import { FinanceController } from "./finance.controller";
 import { FinanceService } from "./finance.service";
 import { InternalDebt } from "./internal-debt.entity";
 import { Loan } from "./loan.entity";
+import { PayrollAccrual } from "./payroll-accrual.entity";
 import { PayrollItem } from "./payroll-item.entity";
 import { PayrollPeriod } from "./payroll-period.entity";
-import { PayrollAccrual } from "./payroll-accrual.entity";
 
 @Module({
   imports: [
