@@ -1,27 +1,33 @@
-import { Global, Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from '../modules/users/user.entity';
-import { Customer } from '../modules/customers/customer.entity';
-import { AttendanceRecord } from '../modules/attendance/attendance-record.entity';
-import { InventoryItem } from '../modules/inventory/inventory-item.entity';
-import { Warehouse } from '../modules/inventory/warehouse.entity';
-import { InventoryStock } from '../modules/inventory/inventory-stock.entity';
-import { InventoryMovement } from '../modules/inventory/inventory-movement.entity';
-import { PayrollPeriod } from '../modules/finance/payroll-period.entity';
-import { PayrollItem } from '../modules/finance/payroll-item.entity';
-import { Loan } from '../modules/finance/loan.entity';
-import { InternalDebt } from '../modules/finance/internal-debt.entity';
-import { UsersRepository } from './users.repository';
-import { CustomersRepository } from './customers.repository';
-import { AttendanceRepository } from './attendance.repository';
-import { InventoryItemsRepository } from './inventory-items.repository';
-import { WarehousesRepository } from './warehouses.repository';
-import { InventoryStocksRepository } from './inventory-stocks.repository';
-import { InventoryMovementsRepository } from './inventory-movements.repository';
-import { PayrollPeriodsRepository } from './payroll-periods.repository';
-import { PayrollItemsRepository } from './payroll-items.repository';
-import { LoansRepository } from './loans.repository';
-import { DebtsRepository } from './debts.repository';
+import { Global, Module } from "@nestjs/common";
+import { TypeOrmModule } from "@nestjs/typeorm";
+import { AttendanceRecord } from "../modules/attendance/attendance-record.entity";
+import { Customer } from "../modules/customers/customer.entity";
+import { CashDailySummary } from "../modules/finance/cash-daily-summary.entity";
+import { CashEntry } from "../modules/finance/cash-entry.entity";
+import { InternalDebt } from "../modules/finance/internal-debt.entity";
+import { Loan } from "../modules/finance/loan.entity";
+import { PayrollItem } from "../modules/finance/payroll-item.entity";
+import { PayrollAccrual } from "../modules/finance/payroll-accrual.entity";
+import { PayrollPeriod } from "../modules/finance/payroll-period.entity";
+import { InventoryItem } from "../modules/inventory/inventory-item.entity";
+import { InventoryMovement } from "../modules/inventory/inventory-movement.entity";
+import { InventoryStock } from "../modules/inventory/inventory-stock.entity";
+import { Warehouse } from "../modules/inventory/warehouse.entity";
+import { User } from "../modules/users/user.entity";
+import { AttendanceRepository } from "./attendance.repository";
+import { CashDailySummaryRepository } from "./cash-daily-summary.repository";
+import { CashEntriesRepository } from "./cash-entries.repository";
+import { CustomersRepository } from "./customers.repository";
+import { DebtsRepository } from "./debts.repository";
+import { InventoryItemsRepository } from "./inventory-items.repository";
+import { InventoryMovementsRepository } from "./inventory-movements.repository";
+import { InventoryStocksRepository } from "./inventory-stocks.repository";
+import { LoansRepository } from "./loans.repository";
+import { PayrollItemsRepository } from "./payroll-items.repository";
+import { PayrollAccrualsRepository } from "./payroll-accruals.repository";
+import { PayrollPeriodsRepository } from "./payroll-periods.repository";
+import { UsersRepository } from "./users.repository";
+import { WarehousesRepository } from "./warehouses.repository";
 
 @Global()
 @Module({
@@ -35,9 +41,12 @@ import { DebtsRepository } from './debts.repository';
       InventoryStock,
       InventoryMovement,
       PayrollPeriod,
-      PayrollItem,
+  PayrollItem,
+  PayrollAccrual,
       Loan,
       InternalDebt,
+      CashEntry,
+      CashDailySummary,
     ]),
   ],
   providers: [
@@ -52,6 +61,9 @@ import { DebtsRepository } from './debts.repository';
     PayrollItemsRepository,
     LoansRepository,
     DebtsRepository,
+    CashEntriesRepository,
+  CashDailySummaryRepository,
+  PayrollAccrualsRepository,
   ],
   exports: [
     UsersRepository,
@@ -65,6 +77,9 @@ import { DebtsRepository } from './debts.repository';
     PayrollItemsRepository,
     LoansRepository,
     DebtsRepository,
+    CashEntriesRepository,
+  CashDailySummaryRepository,
+  PayrollAccrualsRepository,
   ],
 })
 export class RepositoriesModule {}
