@@ -18,7 +18,6 @@ import MessagesPage from './pages/Messages';
 import AdminSettings from './pages/AdminSettings';
 import Navbar from './components/Navbar';
 import AdminShell from './components/AdminShell';
-import { WorkersMap } from './pages/WorkersMap';
 
 function RootLayout(){
   return (
@@ -82,7 +81,6 @@ export const router = createBrowserRouter([
       { path: 'finance', element: <Protected role="ADMIN"><AdminShell><Finance /></AdminShell></Protected> },
       { path: 'tasks-admin', element: <Protected role="ADMIN"><AdminShell><TasksAdmin /></AdminShell></Protected> },
       { path: 'my-tasks', element: <Protected><><Navbar /><MyTasks /></></Protected> },
-      { path: 'mapa-trabajadores', element: <Protected role="ADMIN"><AdminShell><WorkersMap /></AdminShell></Protected> },
       { path: '*', element: <Navigate to="/" replace /> },
     ],
   },
