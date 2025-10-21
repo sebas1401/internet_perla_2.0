@@ -1,23 +1,25 @@
-import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, Index, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { User } from '../users/user.entity';
 
 @Entity()
+@Index('idx_message_sender', ['sender'])
+@Index('idx_message_recipient', ['recipient'])
 export class Message {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => User, { eager: true, onDelete: 'CASCADE' })
+  @ManyToOne(() => User, { nullable: false, eager: true })
   sender: User;
 
-  @ManyToOne(() => User, { eager: true, onDelete: 'CASCADE' })
+  @ManyToOne(() => User, { nullable: false, eager: true })
   recipient: User;
 
-  @Column({ type: 'text', nullable: true })
-  content?: string | null;
+  @Column({ type: 'text' })
+  content: string;
 
-  @Column({ type: 'text', nullable: true })
-  imageUrl?: string | null;
-
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamp with time zone' })
   createdAt: Date;
+
+  @Column({ default: false })
+  read: boolean;
 }

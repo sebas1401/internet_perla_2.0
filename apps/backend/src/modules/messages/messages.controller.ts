@@ -1,26 +1,25 @@
-import { Body, Controller, Get, Param, Post, UseGuards, Req } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { join } from 'path';
-import { SendMessageDto } from './dto';
 import { MessagesService } from './messages.service';
+import { SendMessageDto } from './dto';
 
-// image uploads removed; text-only messaging
-
-@Controller('messages')
 @UseGuards(AuthGuard('jwt'))
+@Controller('messages')
 export class MessagesController {
-  constructor(private service: MessagesService) {
-    // no-op
-  }
-
-  @Post()
-  async send(@Req() req: any, @Body() dto: SendMessageDto) {
-    return this.service.send(req.user.userId, dto.recipientId, dto.content);
-  }
+  constructor(private readonly service: MessagesService) {}
 
   @Get('contacts')
-  contacts(@Req() req: any) { return this.service.contactsFor(req.user.userId); }
+  list(@Req() req: any) {
+    return this.service.listContacts(req.user.userId);
+  }
 
-  @Get('thread/:userId')
-  thread(@Req() req: any, @Param('userId') other: string) { return this.service.thread(req.user.userId, other); }
+  @Get('thread/:contactId')
+  thread(@Req() req: any, @Param('contactId') contactId: string) {
+    return this.service.getThread(req.user.userId, contactId);
+  }
+
+  @Post('send')
+  send(@Req() req: any, @Body() dto: SendMessageDto) {
+    return this.service.sendMessage(req.user.userId, dto);
+  }
 }
