@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { AttendanceService } from './attendance.service';
 import { CheckDto } from './dto';
 import { AuthGuard } from '@nestjs/passport';
@@ -9,5 +9,9 @@ export class AttendanceController {
   constructor(private service: AttendanceService) {}
   @Get() list() { return this.service.list(); }
   @Post('check') check(@Body() dto: CheckDto) { return this.service.check(dto); }
+  @Get('summary') summary(@Query('name') name?: string) {
+    if (!name) throw new BadRequestException('name is required');
+    return this.service.summary(name);
+  }
 }
 

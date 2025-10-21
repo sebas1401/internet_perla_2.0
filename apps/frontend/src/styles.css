@@ -25,3 +25,18 @@ body { @apply font-sans text-gray-800; }
   @apply transition-transform duration-200 ease-out;
 }
 .card-hover:hover { transform: translateY(-2px) scale(1.01); }
+
+/* Custom scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
