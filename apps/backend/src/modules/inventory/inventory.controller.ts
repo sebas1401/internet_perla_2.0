@@ -19,6 +19,6 @@ export class InventoryController {
 
   @Get('stocks') listStocks() { return this.service.listStocks(); }
   @Get('movements') listMovements() { return this.service.listMovements(); }
-  @Post('movements') @Roles('ADMIN') move(@Body() dto: MovementDto) { return this.service.move(dto); }
+  @Post('movements') move(@Body() dto: MovementDto) { return this.service.move(dto); }
 }
 

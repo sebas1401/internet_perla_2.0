@@ -22,5 +22,8 @@ export class User {
 
   @Column({ nullable: true })
   name?: string;
+
+  @Column({ default: false })
+  isBlocked: boolean;
 }
 

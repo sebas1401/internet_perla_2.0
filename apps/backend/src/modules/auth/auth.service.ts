@@ -10,6 +10,7 @@ export class AuthService {
   async login(email: string, password: string) {
     const user = await this.users.findByEmail(email);
     if (!user) throw new UnauthorizedException('Invalid credentials');
+  if (user.isBlocked) throw new UnauthorizedException('Cuenta bloqueada');
     const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) throw new UnauthorizedException('Invalid credentials');
     const payload = { sub: user.id, email: user.email, role: user.role, name: user.name };

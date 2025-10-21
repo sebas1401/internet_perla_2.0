@@ -19,13 +19,13 @@ export class UsersService {
   async register(dto: RegisterDto) {
     const passwordHash = await bcrypt.hash(dto.password, 10);
     const count = await this.repo.count();
-    const u: Partial<User> = { email: dto.email, passwordHash, name: dto.name, role: count === 0 ? 'ADMIN' as any : undefined };
+    const u: Partial<User> = { email: dto.email, passwordHash, name: dto.name, role: count === 0 ? 'ADMIN' as any : undefined, isBlocked: false };
     return this.repo.save(u);
   }
 
   async create(dto: CreateUserDto) {
     const passwordHash = await bcrypt.hash(dto.password, 10);
-    const u: Partial<User> = { email: dto.email, passwordHash, role: dto.role, name: dto.name };
+    const u: Partial<User> = { email: dto.email, passwordHash, role: dto.role, name: dto.name, isBlocked: dto.isBlocked ?? false };
     return this.repo.save(u);
   }
 
@@ -35,6 +35,7 @@ export class UsersService {
     if (dto.name) u.name = dto.name;
     if (dto.role) u.role = dto.role;
     if (dto.password) u.passwordHash = await bcrypt.hash(dto.password, 10);
+    if (typeof dto.isBlocked === 'boolean') u.isBlocked = dto.isBlocked;
     return this.repo.save(u);
   }
 
