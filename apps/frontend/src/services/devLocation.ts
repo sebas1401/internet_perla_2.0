@@ -32,10 +32,10 @@ export function getDevLocation(): { lat: number; lng: number } {
   if (!devModeEnabled) {
     throw new Error('Modo desarrollo no activado');
   }
-  
+
   const location = DEFAULT_LOCATIONS[currentLocationIndex];
   currentLocationIndex = (currentLocationIndex + 1) % DEFAULT_LOCATIONS.length;
-  
+
   console.log(`[DevLocation] 📍 Ubicación de prueba: ${location.name}`);
   return { lat: location.lat, lng: location.lng };
 }
@@ -54,10 +54,10 @@ export function setCustomDevLocation(lat: number, lng: number) {
   if (!devModeEnabled) {
     enableDevMode();
   }
-  
+
   const customLocation = { lat, lng, name: 'Personalizada' };
   DEFAULT_LOCATIONS[0] = customLocation;
   currentLocationIndex = 0;
-  
+
   console.log(`[DevLocation] 📍 Ubicación personalizada: ${lat}, ${lng}`);
 }

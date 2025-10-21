@@ -85,7 +85,7 @@ export function WorkersMap() {
   useEffect(() => {
     if (!gmapRef.current) return;
     renderMarkers();
-    
+
     // Centrar mapa en la primera ubicación si existen
     if (locations.length > 0) {
       const first = locations[0];

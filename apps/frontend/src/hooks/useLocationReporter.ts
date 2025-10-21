@@ -9,13 +9,13 @@ interface UseLocationReporterOptions {
 /**
  * Hook que reporta la ubicación del trabajador periódicamente
  * Se activa automáticamente al montar el componente si `enabled` es true
- * 
+ *
  * NOTA: En localhost sin HTTPS, Geolocation API puede fallar.
  * En producción con HTTPS funcionará correctamente.
- * 
+ *
  * @param userId ID del usuario autenticado
  * @param options Opciones de configuración
- * 
+ *
  * @example
  * function Dashboard() {
  *   const { user } = useAuth();

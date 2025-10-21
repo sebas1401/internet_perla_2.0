@@ -27,7 +27,7 @@ export async function getCurrentLocation(): Promise<{ lat: number; lng: number }
     };
 
     let timeoutId: ReturnType<typeof setTimeout>;
-    
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
         clearTimeout(timeoutId);
@@ -44,7 +44,7 @@ export async function getCurrentLocation(): Promise<{ lat: number; lng: number }
       (error) => {
         clearTimeout(timeoutId);
         const code = error.code;
-        
+
         // Si hay error de permiso en localhost y dev mode está activo, usar fallback
         if (code === 1 && isDevModeEnabled()) { // PERMISSION_DENIED
           try {
@@ -56,7 +56,7 @@ export async function getCurrentLocation(): Promise<{ lat: number; lng: number }
             console.log('[LocationService] Dev mode no disponible');
           }
         }
-        
+
         switch (code) {
           case 1: // PERMISSION_DENIED
             console.error('[LocationService] ❌ Permiso denegado - Verifica ajustes de navegador');
@@ -70,7 +70,7 @@ export async function getCurrentLocation(): Promise<{ lat: number; lng: number }
           default:
             console.warn(`[LocationService] ⚠️ Error: ${error.message}`);
         }
-        
+
         resolve(null);
       },
       options,
@@ -92,7 +92,7 @@ export async function getCurrentLocation(): Promise<{ lat: number; lng: number }
 export async function sendLocation(userId: string): Promise<boolean> {
   try {
     const location = await getCurrentLocation();
-    
+
     if (!location) {
       return false;
     }
@@ -104,7 +104,7 @@ export async function sendLocation(userId: string): Promise<boolean> {
     };
 
     console.log(`[LocationService] 📤 Enviando: ${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`);
-    
+
     const response = await api.post('/locations', payload);
     console.log(`[LocationService] ✅ Exitoso`);
     return true;

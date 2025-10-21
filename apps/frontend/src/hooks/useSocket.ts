@@ -19,14 +19,14 @@ export function useSocket(){
       reconnectionDelay: 2000,
       reconnectionDelayMax: 10000,
     });
-    const onConnectError = () => { 
+    const onConnectError = () => {
       // Solo logout si es error crítico, no por desconexión temporal
       console.debug('[Socket] Conexión con error, reintentando...');
     };
-    const onDisconnect = (reason: string) => { 
-      if (reason === 'io server disconnect') { 
-        try { logout(); } catch {} 
-      } 
+    const onDisconnect = (reason: string) => {
+      if (reason === 'io server disconnect') {
+        try { logout(); } catch {}
+      }
     };
     s.on('connect_error', onConnectError);
     s.on('disconnect', onDisconnect);
