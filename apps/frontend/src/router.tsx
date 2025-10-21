@@ -1,26 +1,25 @@
-import React from 'react';
-import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
-import { Toaster } from 'sonner';
-import { AuthProvider, useAuth } from './hooks/useAuth';
+import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
+import { Toaster } from "sonner";
+import { AuthProvider, useAuth } from "./hooks/useAuth";
 
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import Dashboard from './pages/Dashboard';
-import AdminPanel from './pages/AdminPanel';
-import Attendance from './pages/Attendance';
-import Inventory from './pages/Inventory';
-import Finance from './pages/Finance';
-import CashCut from './pages/CashCut';
-import Workers from './pages/Workers';
-import Profile from './pages/Profile';
-import TasksAdmin from './pages/TasksAdmin';
-import MyTasks from './pages/MyTasks';
-import MessagesPage from './pages/Messages';
-import AdminSettings from './pages/AdminSettings';
-import Navbar from './components/Navbar';
-import AdminShell from './components/AdminShell';
+import AdminShell from "./components/AdminShell";
+import Navbar from "./components/Navbar";
+import AdminPanel from "./pages/AdminPanel";
+import AdminSettings from "./pages/AdminSettings";
+import Attendance from "./pages/Attendance";
+import CashCut from "./pages/CashCut";
+import Dashboard from "./pages/Dashboard";
+import Finance from "./pages/Finance";
+import Inventory from "./pages/Inventory";
+import LoginPage from "./pages/LoginPage";
+import MessagesPage from "./pages/Messages";
+import MyTasks from "./pages/MyTasks";
+import Profile from "./pages/Profile";
+import RegisterPage from "./pages/RegisterPage";
+import TasksAdmin from "./pages/TasksAdmin";
+import Workers from "./pages/Workers";
 
-function RootLayout(){
+function RootLayout() {
   return (
     <>
       <Outlet />
@@ -29,7 +28,7 @@ function RootLayout(){
   );
 }
 
-function WithAuth(){
+function WithAuth() {
   return (
     <AuthProvider>
       <RootLayout />
@@ -37,7 +36,13 @@ function WithAuth(){
   );
 }
 
-function Protected({ children, role }:{ children: JSX.Element; role?: 'ADMIN'|'USER' }){
+function Protected({
+  children,
+  role,
+}: {
+  children: JSX.Element;
+  role?: "ADMIN" | "USER";
+}) {
   const { user, initializing } = useAuth();
   if (initializing) return null;
   if (!user) return <Navigate to="/login" replace />;
@@ -45,57 +50,189 @@ function Protected({ children, role }:{ children: JSX.Element; role?: 'ADMIN'|'U
   return children;
 }
 
-function AdminSwitch(){
+function AdminSwitch() {
   const { user } = useAuth();
-  if (user?.role === 'ADMIN') return <AdminShell><AdminPanel/></AdminShell>;
-  return (<><Navbar /><Dashboard/></>);
+  if (user?.role === "ADMIN")
+    return (
+      <AdminShell>
+        <AdminPanel />
+      </AdminShell>
+    );
+  return (
+    <>
+      <Navbar />
+      <Dashboard />
+    </>
+  );
 }
 
-function MessagesRoute(){
+function MessagesRoute() {
   const { user } = useAuth();
-  if (user?.role === 'ADMIN') return <AdminShell><MessagesPage/></AdminShell>;
-  return <MessagesPage/>;
+  if (user?.role === "ADMIN")
+    return (
+      <AdminShell>
+        <MessagesPage />
+      </AdminShell>
+    );
+  return <MessagesPage />;
 }
 
-function InventoryRoute(){
+function InventoryRoute() {
   const { user } = useAuth();
-  if (user?.role === 'ADMIN') return <AdminShell><Inventory/></AdminShell>;
-  return <><Navbar /><Inventory/></>;
+  if (user?.role === "ADMIN")
+    return (
+      <AdminShell>
+        <Inventory />
+      </AdminShell>
+    );
+  return (
+    <>
+      <Navbar />
+      <Inventory />
+    </>
+  );
 }
 
-function FinanceRoute(){
+function FinanceRoute() {
   const { user } = useAuth();
   // ADMIN ve el módulo completo de Finanzas en AdminShell, USER ve el corte de caja con Navbar
-  if (user?.role === 'ADMIN') return <AdminShell><Finance/></AdminShell>;
-  return <><Navbar /><CashCut/></>;
+  if (user?.role === "ADMIN")
+    return (
+      <AdminShell>
+        <Finance />
+      </AdminShell>
+    );
+  return (
+    <>
+      <Navbar />
+      <CashCut />
+    </>
+  );
 }
 
-const futureFlags = { v7_startTransition: true, v7_relativeSplatPath: true } as any;
+const futureFlags = {
+  v7_startTransition: true,
+  v7_relativeSplatPath: true,
+} as any;
 
-export const router = createBrowserRouter([
-  {
-    path: '/',
-    element: <WithAuth />,
-    children: [
-      { index: true, element: <Protected><AdminSwitch/></Protected> },
-      { path: 'login', element: <LoginPage /> },
-      { path: 'register', element: <RegisterPage /> },
-      { path: 'workers', element: <Protected role="ADMIN"><AdminShell><Workers/></AdminShell></Protected> },
-      { path: 'messages', element: <Protected><MessagesRoute/></Protected> },
-      { path: 'profile', element: <Protected><><Navbar /><Profile /></></Protected> },
-      { path: 'admin-settings', element: <Protected role="ADMIN"><AdminShell><AdminSettings/></AdminShell></Protected> },
-      { path: 'attendance', element: <Protected role="ADMIN"><AdminShell><Attendance /></AdminShell></Protected> },
-      { path: 'inventory', element: <Protected><InventoryRoute /></Protected> },
-  // Finanzas visible para ADMIN y USER usando selector de layout/contenido
-  { path: 'finance', element: <Protected><FinanceRoute /></Protected> },
-  { path: 'finanzas', element: <Protected><FinanceRoute /></Protected> },
-  // compatibilidad: redirigir /cash-cut a /finanzas
-  { path: 'cash-cut', element: <Navigate to="/finanzas" replace /> },
-      { path: 'tasks-admin', element: <Protected role="ADMIN"><AdminShell><TasksAdmin /></AdminShell></Protected> },
-      { path: 'my-tasks', element: <Protected><><Navbar /><MyTasks /></></Protected> },
-      { path: '*', element: <Navigate to="/" replace /> },
-    ],
-  },
-], { future: futureFlags });
+export const router = createBrowserRouter(
+  [
+    {
+      path: "/",
+      element: <WithAuth />,
+      children: [
+        {
+          index: true,
+          element: (
+            <Protected>
+              <AdminSwitch />
+            </Protected>
+          ),
+        },
+        { path: "login", element: <LoginPage /> },
+        { path: "register", element: <RegisterPage /> },
+        {
+          path: "workers",
+          element: (
+            <Protected role="ADMIN">
+              <AdminShell>
+                <Workers />
+              </AdminShell>
+            </Protected>
+          ),
+        },
+        {
+          path: "messages",
+          element: (
+            <Protected>
+              <MessagesRoute />
+            </Protected>
+          ),
+        },
+        {
+          path: "profile",
+          element: (
+            <Protected>
+              <>
+                <Navbar />
+                <Profile />
+              </>
+            </Protected>
+          ),
+        },
+        {
+          path: "admin-settings",
+          element: (
+            <Protected role="ADMIN">
+              <AdminShell>
+                <AdminSettings />
+              </AdminShell>
+            </Protected>
+          ),
+        },
+        {
+          path: "attendance",
+          element: (
+            <Protected role="ADMIN">
+              <AdminShell>
+                <Attendance />
+              </AdminShell>
+            </Protected>
+          ),
+        },
+        {
+          path: "inventory",
+          element: (
+            <Protected>
+              <InventoryRoute />
+            </Protected>
+          ),
+        },
+        // Finanzas visible para ADMIN y USER usando selector de layout/contenido
+        {
+          path: "finance",
+          element: (
+            <Protected>
+              <FinanceRoute />
+            </Protected>
+          ),
+        },
+        {
+          path: "finanzas",
+          element: (
+            <Protected>
+              <FinanceRoute />
+            </Protected>
+          ),
+        },
+        // compatibilidad: redirigir /cash-cut a /finanzas
+        { path: "cash-cut", element: <Navigate to="/finanzas" replace /> },
+        {
+          path: "tasks-admin",
+          element: (
+            <Protected role="ADMIN">
+              <AdminShell>
+                <TasksAdmin />
+              </AdminShell>
+            </Protected>
+          ),
+        },
+        {
+          path: "my-tasks",
+          element: (
+            <Protected>
+              <>
+                <Navbar />
+                <MyTasks />
+              </>
+            </Protected>
+          ),
+        },
+        { path: "*", element: <Navigate to="/" replace /> },
+      ],
+    },
+  ],
+  { future: futureFlags }
+);
 
 export default router;
