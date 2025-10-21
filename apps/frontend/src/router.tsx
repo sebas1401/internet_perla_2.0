@@ -10,6 +10,7 @@ import AdminPanel from './pages/AdminPanel';
 import Attendance from './pages/Attendance';
 import Inventory from './pages/Inventory';
 import Finance from './pages/Finance';
+import CashCut from './pages/CashCut';
 import Workers from './pages/Workers';
 import Profile from './pages/Profile';
 import TasksAdmin from './pages/TasksAdmin';
@@ -62,6 +63,13 @@ function InventoryRoute(){
   return <><Navbar /><Inventory/></>;
 }
 
+function FinanceRoute(){
+  const { user } = useAuth();
+  // ADMIN ve el módulo completo de Finanzas en AdminShell, USER ve el corte de caja con Navbar
+  if (user?.role === 'ADMIN') return <AdminShell><Finance/></AdminShell>;
+  return <><Navbar /><CashCut/></>;
+}
+
 const futureFlags = { v7_startTransition: true, v7_relativeSplatPath: true } as any;
 
 export const router = createBrowserRouter([
@@ -78,7 +86,11 @@ export const router = createBrowserRouter([
       { path: 'admin-settings', element: <Protected role="ADMIN"><AdminShell><AdminSettings/></AdminShell></Protected> },
       { path: 'attendance', element: <Protected role="ADMIN"><AdminShell><Attendance /></AdminShell></Protected> },
       { path: 'inventory', element: <Protected><InventoryRoute /></Protected> },
-      { path: 'finance', element: <Protected role="ADMIN"><AdminShell><Finance /></AdminShell></Protected> },
+  // Finanzas visible para ADMIN y USER usando selector de layout/contenido
+  { path: 'finance', element: <Protected><FinanceRoute /></Protected> },
+  { path: 'finanzas', element: <Protected><FinanceRoute /></Protected> },
+  // compatibilidad: redirigir /cash-cut a /finanzas
+  { path: 'cash-cut', element: <Navigate to="/finanzas" replace /> },
       { path: 'tasks-admin', element: <Protected role="ADMIN"><AdminShell><TasksAdmin /></AdminShell></Protected> },
       { path: 'my-tasks', element: <Protected><><Navbar /><MyTasks /></></Protected> },
       { path: '*', element: <Navigate to="/" replace /> },

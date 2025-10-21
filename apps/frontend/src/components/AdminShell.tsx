@@ -23,7 +23,7 @@ export default function AdminShell({ children }: PropsWithChildren) {
         <nav className="flex-1 flex flex-col gap-1">
           <NavLink to="/" className={linkCls}><Home size={16}/> Dashboard</NavLink>
           <NavLink to="/attendance" className={linkCls}><Clock size={16}/> Asistencia</NavLink>
-          <NavLink to="/finance" className={linkCls}><DollarSign size={16}/> Finanzas</NavLink>
+          <NavLink to="/finanzas" className={linkCls}><DollarSign size={16}/> Finanzas</NavLink>
           <NavLink to="/inventory" className={linkCls}><Boxes size={16}/> Inventario</NavLink>
           <NavLink to="/tasks-admin" className={linkCls}><ClipboardList size={16}/> Tareas</NavLink>
           <NavLink to="/workers" className={linkCls}><Users2 size={16}/> Trabajadores</NavLink>

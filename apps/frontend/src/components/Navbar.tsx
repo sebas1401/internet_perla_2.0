@@ -20,7 +20,7 @@ export default function Navbar() {
             <Link to="/inventory" className="text-white/80 hover:text-white">
               Inventario
             </Link>
-            <Link to="/finance" className="text-white/80 hover:text-white">
+            <Link to="/finanzas" className="text-white/80 hover:text-white">
               Finanzas
             </Link>
             <Link to="/tasks-admin" className="text-white/80 hover:text-white">
@@ -39,7 +39,7 @@ export default function Navbar() {
             <Link to="/messages" className="text-white/80 hover:text-white">
               Mensajes
             </Link>
-            <Link to="/cash-cut" className="text-white/80 hover:text-white">
+            <Link to="/finanzas" className="text-white/80 hover:text-white">
               Finanzas
             </Link>
           </>
