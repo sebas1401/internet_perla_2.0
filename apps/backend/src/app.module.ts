@@ -9,6 +9,7 @@ import { InventoryModule } from './modules/inventory/inventory.module';
 import { FinanceModule } from './modules/finance/finance.module';
 import { RepositoriesModule } from './repositories/repositories.module';
 import { TasksModule } from './modules/tasks/tasks.module';
+import { MessagesModule } from './modules/messages/messages.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { HealthController } from './health.controller';
@@ -42,6 +43,7 @@ import { HealthController } from './health.controller';
     InventoryModule,
     FinanceModule,
     TasksModule,
+    MessagesModule,
   ],
   controllers: [HealthController],
 })
