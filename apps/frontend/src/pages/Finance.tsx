@@ -503,6 +503,9 @@ export default function Finance() {
           <div>
             <h2 className="font-semibold mb-1">Cortes de Caja</h2>
             <p className="text-xs text-gray-500">Filtra por día o semana.</p>
+            <p className="text-xs text-gray-500 mt-1">
+              Recuerda filtrar por dia o semana
+            </p>
           </div>
           <div className="flex flex-wrap gap-2 items-center">
             <select
@@ -651,7 +654,13 @@ export default function Finance() {
                   <td className="px-3 py-2 font-medium">
                     {fmt(Number(s.balance) || 0)}
                   </td>
-                  <td className="px-3 py-2">{s.closedBy || "-"}</td>
+                  <td className="px-3 py-2">
+                    {s.closedBy
+                      ? s.closedBy === "system@auto-close"
+                        ? "auto (20:00)"
+                        : s.closedBy
+                      : "-"}
+                  </td>
                   <td className="px-3 py-2">
                     <button
                       className={

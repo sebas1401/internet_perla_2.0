@@ -48,6 +48,20 @@ export class FinanceService {
   createPeriod(dto: CreatePeriodDto) {
     return this.periods.save(dto as Partial<PayrollPeriod>);
   }
+
+  // Auto-close service entrypoint (idempotent). Uses same logic as persistDailySummary
+  // but sets closedBy to a system identity when creating a new closure snapshot.
+  async autoCloseDay(date: string) {
+    // quick check: if already closed, do nothing
+    const existing = await this.cashSummary.findByDate(date);
+    if (existing?.closedBy) {
+      return { status: "already-closed", date };
+    }
+    // Run same persistence routine, setting closedBy to system identity
+    const saved = await this.persistDailySummary(date, "system@auto-close");
+    // Emit realtime event (persistDailySummary already emits when closedBy present)
+    return { status: "closed", date, id: saved?.id };
+  }
   listPeriods() {
     return this.periods.list();
   }

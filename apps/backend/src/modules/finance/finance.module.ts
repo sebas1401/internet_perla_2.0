@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { RealtimeModule } from "../../realtime/realtime.module";
+import { AutoCloseService } from "./auto-close.service";
 import { CashEntry } from "./cash-entry.entity";
 import { FinanceController } from "./finance.controller";
 import { FinanceService } from "./finance.service";
@@ -22,7 +23,7 @@ import { PayrollPeriod } from "./payroll-period.entity";
     ]),
     RealtimeModule,
   ],
-  providers: [FinanceService],
+  providers: [FinanceService, AutoCloseService],
   controllers: [FinanceController],
 })
 export class FinanceModule {}
