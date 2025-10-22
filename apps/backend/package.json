@@ -24,6 +24,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
     "glob": "^7.2.3",
+    "lodash.includes": "^4.3.0",
     "luxon": "^3.7.2",
     "multer": "^1.4.5-lts.1",
     "node-cron": "^4.2.1",
@@ -45,5 +46,8 @@
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.4.2"
+  },
+  "overrides": {
+    "jsonwebtoken": "9.0.2"
   }
 }

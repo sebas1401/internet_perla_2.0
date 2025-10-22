@@ -18,6 +18,7 @@ import Profile from "./pages/Profile";
 import RegisterPage from "./pages/RegisterPage";
 import TasksAdmin from "./pages/TasksAdmin";
 import Workers from "./pages/Workers";
+import ClientesAdminPage from "./pages/admin/clientes";
 
 function RootLayout() {
   return (
@@ -176,6 +177,16 @@ export const router = createBrowserRouter(
             <Protected role="ADMIN">
               <AdminShell>
                 <Attendance />
+              </AdminShell>
+            </Protected>
+          ),
+        },
+        {
+          path: "admin/clientes",
+          element: (
+            <Protected role="ADMIN">
+              <AdminShell>
+                <ClientesAdminPage />
               </AdminShell>
             </Protected>
           ),

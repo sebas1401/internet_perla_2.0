@@ -26,4 +26,8 @@ export class User {
   // Sueldo diario del empleado (Q), opcional
   @Column("decimal", { precision: 12, scale: 2, nullable: true })
   dailySalary?: number | null;
+
+  // Estado de bloqueo de la cuenta
+  @Column({ type: "boolean", default: false })
+  isBlocked: boolean;
 }
