@@ -3,10 +3,11 @@ import { User } from './user.entity';
 import { CreateUserDto, RegisterDto, UpdateUserDto } from './dto';
 import * as bcrypt from 'bcryptjs';
 import { UsersRepository } from '../../repositories/users.repository';
+import { RealtimeGateway } from '../../realtime/realtime.gateway';
 
 @Injectable()
 export class UsersService {
-  constructor(private repo: UsersRepository) {}
+  constructor(private repo: UsersRepository, private realtimeGateway: RealtimeGateway) {}
 
   findAll() { return this.repo.findAll(); }
   async findOne(id: string) {
@@ -43,5 +44,19 @@ export class UsersService {
     const u = await this.findOne(id);
     await this.repo.remove(u);
     return { deleted: true };
+  }
+
+  findAllWithLocation() {
+    return this.repo.findAllWithLocation();
+  }
+
+  async updateLocation(userId: string, latitude: number, longitude: number) {
+    console.log(`Received location update for user ${userId}: ${latitude}, ${longitude}`);
+    const user = await this.findOne(userId);
+    user.latitude = latitude;
+    user.longitude = longitude;
+    await this.repo.save(user);
+    this.realtimeGateway.handleLocationUpdate(userId, latitude, longitude);
+    return { success: true };
   }
 }

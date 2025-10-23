@@ -58,4 +58,9 @@ export class RealtimeGateway
   broadcastAll(event: string, data: any) {
     this.server?.emit(event, data);
   }
+
+  public handleLocationUpdate(workerId: string, lat: number, lng: number) {
+    console.log(`Broadcasting location update for worker ${workerId}: ${lat}, ${lng}`);
+    this.broadcastToAdmins("worker-location-updated", { workerId, lat, lng });
+  }
 }

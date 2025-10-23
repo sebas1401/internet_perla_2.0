@@ -1,5 +1,13 @@
-import { IsBoolean, IsEmail, IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsBoolean, IsEmail, IsEnum, IsNumber, IsOptional, IsString, MinLength } from 'class-validator';
 import { Role } from './user.entity';
+
+export class UpdateLocationDto {
+  @IsNumber()
+  latitude: number;
+
+  @IsNumber()
+  longitude: number;
+}
 
 export class RegisterDto {
   @IsEmail()

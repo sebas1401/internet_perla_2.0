@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
 import { Toaster } from "sonner";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
+import { useLocationTracking } from "./hooks/useLocationTracking";
 
 import AdminShell from "./components/AdminShell";
 import Navbar from "./components/Navbar";
@@ -18,6 +19,7 @@ import Profile from "./pages/Profile";
 import RegisterPage from "./pages/RegisterPage";
 import TasksAdmin from "./pages/TasksAdmin";
 import Workers from "./pages/Workers";
+import { WorkersMap } from "./pages/WorkersMap";
 
 function RootLayout() {
   return (
@@ -28,10 +30,15 @@ function RootLayout() {
   );
 }
 
+function AppLogic() {
+  useLocationTracking();
+  return <RootLayout />;
+}
+
 function WithAuth() {
   return (
     <AuthProvider>
-      <RootLayout />
+      <AppLogic />
     </AuthProvider>
   );
 }
@@ -225,6 +232,16 @@ export const router = createBrowserRouter(
                 <Navbar />
                 <MyTasks />
               </>
+            </Protected>
+          ),
+        },
+        {
+          path: "mapa-de-ubicacion",
+          element: (
+            <Protected role="ADMIN">
+              <AdminShell>
+                <WorkersMap />
+              </AdminShell>
             </Protected>
           ),
         },

@@ -54,7 +54,7 @@ const navItems = [
   { to: '/inventory', label: 'Inventario', icon: Boxes },
   { to: '/tasks-admin', label: 'Tareas', icon: ClipboardList },
   { to: '/workers', label: 'Trabajadores', icon: Users2 },
-  { to: '/mapa-trabajadores', label: 'Mapa de Ubicacion', icon: Map },
+  { to: '/mapa-de-ubicacion', label: 'Mapa de Ubicacion', icon: Map },
   { to: '/messages', label: 'Mensajes', icon: MessageSquare },
 ];
 

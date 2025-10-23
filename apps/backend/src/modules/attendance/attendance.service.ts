@@ -13,4 +13,5 @@ export class AttendanceService {
     this.rt.broadcastToAdmins('attendance:created', saved);
     return saved;
   }
+  summary(name: string) { return this.repo.findByName(name); }
 }

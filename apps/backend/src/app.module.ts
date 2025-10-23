@@ -10,7 +10,6 @@ import { FinanceModule } from './modules/finance/finance.module';
 import { MessagesModule } from './modules/messages/messages.module';
 import { RepositoriesModule } from './repositories/repositories.module';
 import { TasksModule } from './modules/tasks/tasks.module';
-import { MessagesModule } from './modules/messages/messages.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { HealthController } from './health.controller';
