@@ -108,29 +108,7 @@ function MessagesHero({ pending }: { pending: number }) {
 }
 
 export default function MessagesPage() {
-  const { user } = useAuth();
-  const isWorker = user?.role === 'USER';
-
-  return (
-    <div className="mx-auto w-full max-w-7xl px-3 pb-10 pt-6 sm:px-6 lg:px-8">
-      {isWorker && (
-        <motion.div
-          className="mb-6 inline-flex"
-          initial={{ opacity: 0, y: -12 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <Link
-            to="/"
-            className="group inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/80 px-4 py-2 text-sm text-emerald-700 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50"
-          >
-            <ChevronLeft className="h-4 w-4 transition group-hover:-translate-x-1" />
-            <span>Volver al panel</span>
-          </Link>
-        </motion.div>
-      )}
-      <MessagesPane />
-    </div>
-  );
+  return <MessagesPane />;
 }
 
 function MessagesPane() {
@@ -311,7 +289,7 @@ function MessagesPane() {
       <div className="grid grid-cols-12 gap-6">
         <motion.aside
           layout
-          className="col-span-12 h-[72vh] overflow-hidden rounded-3xl border border-emerald-100/60 bg-white/90 shadow-lg shadow-emerald-500/5 backdrop-blur md:col-span-4"
+          className="col-span-12 overflow-hidden rounded-3xl border border-emerald-100/60 bg-white/90 shadow-lg shadow-emerald-500/5 backdrop-blur md:col-span-4"
           initial={{ opacity: 0, x: -24 }}
           animate={{ opacity: 1, x: 0 }}
         >
@@ -380,7 +358,7 @@ function MessagesPane() {
 
         <motion.section
           layout
-          className="relative col-span-12 flex h-[72vh] flex-col overflow-hidden rounded-3xl border border-emerald-100/60 bg-white/90 shadow-2xl shadow-emerald-500/10 backdrop-blur md:col-span-8"
+          className="relative col-span-12 flex flex-col overflow-hidden rounded-3xl border border-emerald-100/60 bg-white/90 shadow-2xl shadow-emerald-500/10 backdrop-blur md:col-span-8"
           initial={{ opacity: 0, x: 24 }}
           animate={{ opacity: 1, x: 0 }}
         >
@@ -470,7 +448,7 @@ function MessagesPane() {
                   onKeyDown={handleComposerKeyDown}
                   placeholder="Escribe un mensaje increíble..."
                   rows={1}
-                  className="max-h-40 w-full resize-none bg-transparent text-sm text-emerald-900 placeholder:text-emerald-400 focus:outline-none"
+                  className="w-full max-h-40 resize-none bg-transparent text-sm text-emerald-900 placeholder:text-emerald-400 focus:outline-none"
                 />
               </div>
               <motion.button

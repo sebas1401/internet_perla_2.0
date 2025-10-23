@@ -81,7 +81,12 @@ function MessagesRoute() {
         <MessagesPage />
       </AdminShell>
     );
-  return <MessagesPage />;
+  return (
+    <>
+      <Navbar />
+      <MessagesPage />
+    </>
+  );
 }
 
 function InventoryRoute() {
