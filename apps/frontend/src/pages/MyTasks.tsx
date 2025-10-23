@@ -217,8 +217,20 @@ export default function MyTasks() {
             ))}
             {visibleTasks.length === 0 && (
               <tr>
-                <td className="p-4 text-slate-500" colSpan={5}>
-                  Sin tareas activas
+                <td className="p-6" colSpan={5}>
+                  <div className="flex flex-col items-center justify-center text-center text-slate-600 py-16">
+                    <img
+                      src="/calma.png"
+                      alt="Ilustración de calma"
+                      className="w-48 h-auto mb-6 opacity-80"
+                    />
+                    <h3 className="text-emerald-600 text-xl font-semibold mb-2">
+                      ¡Gracias por tu trabajo de hoy!
+                    </h3>
+                    <p className="max-w-xl text-slate-600/90 leading-relaxed">
+                      Has completado todas tus tareas asignadas. Tómate un respiro, relájate y prepárate para un nuevo día.
+                    </p>
+                  </div>
                 </td>
               </tr>
             )}

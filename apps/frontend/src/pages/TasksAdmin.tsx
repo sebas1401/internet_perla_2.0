@@ -260,170 +260,188 @@ export default function TasksAdmin() {
           <tbody>
             {tasks.map((t, i) => (
               <>
-              <motion.tr
-                key={t.id}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.02 }}
-                className={`border-t ${
-                  t.status === "COMPLETADA"
-                    ? "bg-green-50 border-green-200 opacity-75"
-                    : t.status === "OBJETADA"
-                    ? "bg-red-50 border-red-200"
-                    : ""
-                }`}
-              >
-                <td className="p-3">
-                  <div className="font-medium flex items-center gap-2">
-                    {(t.customer as any)?.nombreCompleto || "-"}
-                    {t.status === "OBJETADA" && (
-                      <span className="inline-flex items-center rounded px-1.5 py-0.5 bg-rose-600 text-white text-[10px] font-semibold">
-                        OBJETADA
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-xs text-slate-500">{t.title}</div>
-                </td>
-                <td className="p-3 text-slate-600">
-                  {(t.customer as any)?.direccion || "-"}
-                </td>
-                <td className="p-3 relative">
-                  <div className="flex items-center gap-2">
-                    <span>{t.assignedTo?.name || t.assignedTo?.email}</span>
-                    <button
-                      className="text-xs text-primary underline"
-                      onClick={() =>
-                        setReassignFor(reassignFor === t.id ? null : t.id)
-                      }
-                    >
-                      Reasignar
-                    </button>
-                  </div>
-                  {reassignFor === t.id && (
-                    <div className="absolute z-10 mt-2 w-56 bg-white border rounded shadow p-2">
-                      <div className="text-[11px] text-slate-500 mb-1">
-                        Selecciona trabajador
-                      </div>
-                      <select
-                        className="w-full border rounded px-2 py-1 text-sm"
-                        defaultValue=""
-                        onChange={(e) =>
-                          e.target.value && onReassign(t.id, e.target.value)
+                <motion.tr
+                  key={t.id}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.02 }}
+                  className={`border-t ${
+                    t.status === "COMPLETADA"
+                      ? "bg-green-50 border-green-200 opacity-75"
+                      : t.status === "OBJETADA"
+                      ? "bg-red-50 border-red-200"
+                      : ""
+                  }`}
+                >
+                  <td className="p-3">
+                    <div className="font-medium flex items-center gap-2">
+                      {(t.customer as any)?.nombreCompleto || "-"}
+                      {t.status === "OBJETADA" && (
+                        <span className="inline-flex items-center rounded px-1.5 py-0.5 bg-rose-600 text-white text-[10px] font-semibold">
+                          OBJETADA
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-slate-500">{t.title}</div>
+                  </td>
+                  <td className="p-3 text-slate-600">
+                    {(t.customer as any)?.direccion || "-"}
+                  </td>
+                  <td className="p-3 relative">
+                    <div className="flex items-center gap-2">
+                      <span>{t.assignedTo?.name || t.assignedTo?.email}</span>
+                      <button
+                        className="text-xs text-primary underline"
+                        onClick={() =>
+                          setReassignFor(reassignFor === t.id ? null : t.id)
                         }
                       >
-                        <option value="" disabled>
-                          Elegir…
-                        </option>
-                        {workerUsers.map((u) => (
-                          <option key={u.id} value={u.id}>
-                            {u.name || u.email}
+                        Reasignar
+                      </button>
+                    </div>
+                    {reassignFor === t.id && (
+                      <div className="absolute z-10 mt-2 w-56 bg-white border rounded shadow p-2">
+                        <div className="text-[11px] text-slate-500 mb-1">
+                          Selecciona trabajador
+                        </div>
+                        <select
+                          className="w-full border rounded px-2 py-1 text-sm"
+                          defaultValue=""
+                          onChange={(e) =>
+                            e.target.value && onReassign(t.id, e.target.value)
+                          }
+                        >
+                          <option value="" disabled>
+                            Elegir…
                           </option>
-                        ))}
+                          {workerUsers.map((u) => (
+                            <option key={u.id} value={u.id}>
+                              {u.name || u.email}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </td>
+                  <td className="p-3">
+                    <span
+                      className={`inline-flex items-center gap-2 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                        statusColors[t.status]
+                      }`}
+                    >
+                      {t.status.replace("_", " ")}
+                    </span>
+                    <div className="mt-1">
+                      <select
+                        className="border rounded px-2 py-1 text-xs"
+                        value={t.status}
+                        disabled={
+                          t.status === "COMPLETADA" || t.status === "OBJETADA"
+                        }
+                        onChange={(e) =>
+                          onChangeStatus(t.id, e.target.value as TaskStatus)
+                        }
+                      >
+                        <option value="PENDIENTE">Pendiente</option>
+                        <option value="EN_PROCESO">En proceso</option>
+                        <option value="COMPLETADA">Completada</option>
                       </select>
                     </div>
-                  )}
-                </td>
-                <td className="p-3">
-                  <span
-                    className={`inline-flex items-center gap-2 rounded-full px-2 py-0.5 text-xs font-semibold ${
-                      statusColors[t.status]
-                    }`}
+                  </td>
+                  <td
+                    className="p-3 text-xs text-slate-600 max-w-xs truncate"
+                    title={
+                      (t.status === "COMPLETADA"
+                        ? t.comentarioFinal
+                        : t.motivoObjecion) || ""
+                    }
                   >
-                    {t.status.replace("_", " ")}
-                  </span>
-                  <div className="mt-1">
-                    <select
-                      className="border rounded px-2 py-1 text-xs"
-                      value={t.status}
-                      disabled={
-                        t.status === "COMPLETADA" || t.status === "OBJETADA"
-                      }
-                      onChange={(e) =>
-                        onChangeStatus(t.id, e.target.value as TaskStatus)
-                      }
-                    >
-                      <option value="PENDIENTE">Pendiente</option>
-                      <option value="EN_PROCESO">En proceso</option>
-                      <option value="COMPLETADA">Completada</option>
-                    </select>
-                  </div>
-                </td>
-                <td
-                  className="p-3 text-xs text-slate-600 max-w-xs truncate"
-                  title={
-                    (t.status === "COMPLETADA"
+                    {t.status === "COMPLETADA"
                       ? t.comentarioFinal
-                      : t.motivoObjecion) || ""
-                  }
-                >
-                  {t.status === "COMPLETADA"
-                    ? t.comentarioFinal
-                      ? t.comentarioFinal.length > 80
-                        ? t.comentarioFinal.slice(0, 80) + "…"
-                        : t.comentarioFinal
-                      : "-"
-                    : t.motivoObjecion
-                    ? t.motivoObjecion.length > 80
-                      ? t.motivoObjecion.slice(0, 80) + "…"
+                        ? t.comentarioFinal.length > 80
+                          ? t.comentarioFinal.slice(0, 80) + "…"
+                          : t.comentarioFinal
+                        : "-"
                       : t.motivoObjecion
-                    : "-"}
-                </td>
-                <td className="p-3">
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() =>
-                        setExpanded((prev) => ({
-                          ...prev,
-                          [t.id]: !prev[t.id],
-                        }))
-                      }
-                      className="text-primary hover:underline text-xs"
-                    >
-                      {expanded[t.id] ? "Ocultar" : "Ver más..."}
-                    </button>
-                    <button
-                      onClick={() => onEdit(t)}
-                      className="text-primary hover:underline text-xs"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      onClick={() => onDelete(t.id)}
-                      className="text-rose-600 hover:underline text-xs"
-                    >
-                      Eliminar
-                    </button>
-                  </div>
-                </td>
-              </motion.tr>
-              {expanded[t.id] && (
-                <tr className="border-t bg-slate-50/50">
-                  <td className="p-3 text-slate-700" colSpan={6}>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
-                      <div>
-                        <div className="text-[11px] text-slate-500">Teléfono</div>
-                        <div className="font-medium">{(t.customer as any)?.telefono ?? "—"}</div>
-                      </div>
-                      <div>
-                        <div className="text-[11px] text-slate-500">Teléfono contacto</div>
-                        <div className="font-medium">{(t as any)?.telefonoContacto ?? "—"}</div>
-                      </div>
-                      <div>
-                        <div className="text-[11px] text-slate-500">IP</div>
-                        <div className="font-medium">{(t.customer as any)?.ipAsignada ?? "—"}</div>
-                      </div>
-                      <div>
-                        <div className="text-[11px] text-slate-500">Latitud</div>
-                        <div className="font-medium">{(t.customer as any)?.latitud ?? "—"}</div>
-                      </div>
-                      <div>
-                        <div className="text-[11px] text-slate-500">Longitud</div>
-                        <div className="font-medium">{(t.customer as any)?.longitud ?? "—"}</div>
-                      </div>
+                      ? t.motivoObjecion.length > 80
+                        ? t.motivoObjecion.slice(0, 80) + "…"
+                        : t.motivoObjecion
+                      : "-"}
+                  </td>
+                  <td className="p-3">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() =>
+                          setExpanded((prev) => ({
+                            ...prev,
+                            [t.id]: !prev[t.id],
+                          }))
+                        }
+                        className="text-primary hover:underline text-xs"
+                      >
+                        {expanded[t.id] ? "Ocultar" : "Ver más..."}
+                      </button>
+                      <button
+                        onClick={() => onEdit(t)}
+                        className="text-primary hover:underline text-xs"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        onClick={() => onDelete(t.id)}
+                        className="text-rose-600 hover:underline text-xs"
+                      >
+                        Eliminar
+                      </button>
                     </div>
                   </td>
-                </tr>
-              )}
+                </motion.tr>
+                {expanded[t.id] && (
+                  <tr className="border-t bg-slate-50/50">
+                    <td className="p-3 text-slate-700" colSpan={6}>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                        <div>
+                          <div className="text-[11px] text-slate-500">
+                            Teléfono
+                          </div>
+                          <div className="font-medium">
+                            {(t.customer as any)?.telefono ?? "—"}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-[11px] text-slate-500">
+                            Teléfono contacto
+                          </div>
+                          <div className="font-medium">
+                            {(t as any)?.telefonoContacto ?? "—"}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-[11px] text-slate-500">IP</div>
+                          <div className="font-medium">
+                            {(t.customer as any)?.ipAsignada ?? "—"}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-[11px] text-slate-500">
+                            Latitud
+                          </div>
+                          <div className="font-medium">
+                            {(t.customer as any)?.latitud ?? "—"}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-[11px] text-slate-500">
+                            Longitud
+                          </div>
+                          <div className="font-medium">
+                            {(t.customer as any)?.longitud ?? "—"}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
               </>
             ))}
             {tasks.length === 0 && (
