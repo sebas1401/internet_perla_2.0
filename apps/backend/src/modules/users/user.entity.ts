@@ -26,9 +26,6 @@ export class User {
   // Sueldo diario del empleado (Q), opcional
   @Column('decimal', { precision: 12, scale: 2, nullable: true })
   dailySalary?: number | null;
-  @Column({ default: false })
-  isBlocked: boolean;
-}
 
   @Column('decimal', {
     precision: 10,
@@ -47,5 +44,5 @@ export class User {
   longitude?: number;
 
   @Column({ type: 'boolean', default: false })
-  isBlocked?: boolean;
+  isBlocked: boolean;
 }
