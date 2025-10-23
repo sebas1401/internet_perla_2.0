@@ -43,6 +43,7 @@ export default function TasksAdmin() {
   const [reassignFor, setReassignFor] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [selectedCustomer, setSelectedCustomer] = useState<
     Customer | undefined
   >();
@@ -250,12 +251,7 @@ export default function TasksAdmin() {
             <tr className="bg-slate-50 text-left">
               <th className="p-3">Cliente</th>
               <th className="p-3">Dirección</th>
-              <th className="p-3">Teléfono</th>
-              <th className="p-3">IP</th>
-              <th className="p-3 hidden sm:table-cell">Latitud</th>
-              <th className="p-3 hidden sm:table-cell">Longitud</th>
               <th className="p-3">Asignado a</th>
-              <th className="p-3">Teléfono contacto</th>
               <th className="p-3">Estado</th>
               <th className="p-3">Comentario</th>
               <th className="p-3">Acciones</th>
@@ -263,6 +259,7 @@ export default function TasksAdmin() {
           </thead>
           <tbody>
             {tasks.map((t, i) => (
+              <>
               <motion.tr
                 key={t.id}
                 initial={{ opacity: 0, y: 6 }}
@@ -289,18 +286,6 @@ export default function TasksAdmin() {
                 </td>
                 <td className="p-3 text-slate-600">
                   {(t.customer as any)?.direccion || "-"}
-                </td>
-                <td className="p-3 text-slate-600">
-                  {(t.customer as any)?.telefono || "-"}
-                </td>
-                <td className="p-3 text-slate-600">
-                  {(t.customer as any)?.ipAsignada ?? "—"}
-                </td>
-                <td className="p-3 text-slate-600 hidden sm:table-cell">
-                  {(t.customer as any)?.latitud ?? "—"}
-                </td>
-                <td className="p-3 text-slate-600 hidden sm:table-cell">
-                  {(t.customer as any)?.longitud ?? "—"}
                 </td>
                 <td className="p-3 relative">
                   <div className="flex items-center gap-2">
@@ -337,9 +322,6 @@ export default function TasksAdmin() {
                       </select>
                     </div>
                   )}
-                </td>
-                <td className="p-3 text-slate-600 min-w-[9rem]">
-                  {(t as any).telefonoContacto || "-"}
                 </td>
                 <td className="p-3">
                   <span
@@ -389,6 +371,17 @@ export default function TasksAdmin() {
                 <td className="p-3">
                   <div className="flex items-center gap-3">
                     <button
+                      onClick={() =>
+                        setExpanded((prev) => ({
+                          ...prev,
+                          [t.id]: !prev[t.id],
+                        }))
+                      }
+                      className="text-primary hover:underline text-xs"
+                    >
+                      {expanded[t.id] ? "Ocultar" : "Ver más..."}
+                    </button>
+                    <button
                       onClick={() => onEdit(t)}
                       className="text-primary hover:underline text-xs"
                     >
@@ -403,10 +396,39 @@ export default function TasksAdmin() {
                   </div>
                 </td>
               </motion.tr>
+              {expanded[t.id] && (
+                <tr className="border-t bg-slate-50/50">
+                  <td className="p-3 text-slate-700" colSpan={6}>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                      <div>
+                        <div className="text-[11px] text-slate-500">Teléfono</div>
+                        <div className="font-medium">{(t.customer as any)?.telefono ?? "—"}</div>
+                      </div>
+                      <div>
+                        <div className="text-[11px] text-slate-500">Teléfono contacto</div>
+                        <div className="font-medium">{(t as any)?.telefonoContacto ?? "—"}</div>
+                      </div>
+                      <div>
+                        <div className="text-[11px] text-slate-500">IP</div>
+                        <div className="font-medium">{(t.customer as any)?.ipAsignada ?? "—"}</div>
+                      </div>
+                      <div>
+                        <div className="text-[11px] text-slate-500">Latitud</div>
+                        <div className="font-medium">{(t.customer as any)?.latitud ?? "—"}</div>
+                      </div>
+                      <div>
+                        <div className="text-[11px] text-slate-500">Longitud</div>
+                        <div className="font-medium">{(t.customer as any)?.longitud ?? "—"}</div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              )}
+              </>
             ))}
             {tasks.length === 0 && (
               <tr>
-                <td className="p-4 text-slate-500" colSpan={11}>
+                <td className="p-4 text-slate-500" colSpan={6}>
                   Sin tareas
                 </td>
               </tr>
