@@ -47,8 +47,14 @@ interface SeenRecord {
 interface Task {
   id: string;
   title: string;
-  description: string;
-  status: "PENDING" | "COMPLETED";
+  description?: string;
+  status:
+    | "PENDIENTE"
+    | "EN_PROCESO"
+    | "COMPLETADA"
+    | "OBJETADA"
+    | "PENDING"
+    | "COMPLETED";
   createdAt?: string;
   updatedAt?: string;
 }
@@ -197,7 +203,9 @@ export function NotificationBell() {
       }
 
       const tasks = (tasksRes.data || []) as Task[];
-      const pendingTasks = tasks.filter((task) => task.status === "PENDING");
+      const pendingTasks = tasks.filter(
+        (task) => task.status === "PENDING" || task.status === "PENDIENTE"
+      );
       const latestTaskTs = pendingTasks.reduce((max, task) => {
         const timestamp = getTimestamp(task.updatedAt || task.createdAt);
         return timestamp > max ? timestamp : max;

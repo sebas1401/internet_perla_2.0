@@ -1,15 +1,20 @@
 import { Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
 import { AttendanceType } from "../../common/enums";
 import { RealtimeGateway } from "../../realtime/realtime.gateway";
 import { AttendanceRepository } from "../../repositories/attendance.repository";
 import { AttendanceRecord } from "./attendance-record.entity";
-import { CheckDto } from "./dto";
+import { Attendance } from "./attendance.entity";
+import { CheckDto, CreateAttendanceDto } from "./dto";
 
 @Injectable()
 export class AttendanceService {
   constructor(
     private repo: AttendanceRepository,
-    private rt: RealtimeGateway
+    private rt: RealtimeGateway,
+    @InjectRepository(Attendance)
+    private dailyRepo: Repository<Attendance>
   ) {}
   list() {
     return this.repo.list();
@@ -33,5 +38,14 @@ export class AttendanceService {
       latest,
       today: { in: todayIn, out: todayOut },
     };
+  }
+
+  async register(dto: CreateAttendanceDto) {
+    // Evitar duplicados por usuario/fecha
+    const { userId, date } = dto;
+    const existing = await this.dailyRepo.findOne({ where: { userId, date } });
+    if (existing) return existing;
+    const entity = this.dailyRepo.create(dto);
+    return this.dailyRepo.save(entity);
   }
 }

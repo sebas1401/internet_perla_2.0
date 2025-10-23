@@ -1,5 +1,12 @@
-import { IsEnum, IsOptional, IsString } from 'class-validator';
-import { AttendanceType } from '../../common/enums';
+import {
+  IsDateString,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  Min,
+} from "class-validator";
+import { AttendanceType } from "../../common/enums";
 
 export class CheckDto {
   @IsString() name: string;
@@ -7,3 +14,18 @@ export class CheckDto {
   @IsOptional() @IsString() note?: string;
 }
 
+export class CreateAttendanceDto {
+  @IsString()
+  userId: string;
+
+  @IsDateString()
+  date: string; // YYYY-MM-DD
+
+  @IsInt()
+  @Min(0)
+  completedTasks: number;
+
+  @IsInt()
+  @Min(0)
+  totalTasks: number;
+}

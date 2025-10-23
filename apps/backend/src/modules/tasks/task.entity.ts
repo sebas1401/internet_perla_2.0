@@ -1,17 +1,32 @@
-import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
-import { User } from '../users/user.entity';
-
-export type TaskStatus = 'PENDING' | 'COMPLETED';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from "typeorm";
+import { Customer } from "../customers/customer.entity";
+import { User } from "../users/user.entity";
+export type TaskStatus = "PENDIENTE" | "EN_PROCESO" | "COMPLETADA" | "OBJETADA";
 
 @Entity()
 export class Task {
-  @PrimaryGeneratedColumn('uuid') id: string;
+  @PrimaryGeneratedColumn("uuid") id: string;
   @Column() title: string;
-  @Column('text') description: string;
-  @ManyToOne(() => User, { eager: true }) assignedTo: User;
-  @Column({ type: 'enum', enum: ['PENDING','COMPLETED'], default: 'PENDING' }) status: TaskStatus;
+  @Column("text", { nullable: true }) description: string;
+  @ManyToOne(() => Customer, { eager: true, nullable: false })
+  customer: Customer;
+  @ManyToOne(() => User, { eager: true, nullable: false }) assignedTo: User;
+  @ManyToOne(() => User, { eager: true, nullable: false }) createdBy: User;
+  // Store status as a simple string for compatibility and easier evolution
+  @Column({ type: "varchar", default: "PENDIENTE" }) status: TaskStatus;
+  @Column({ type: "varchar", length: 50, nullable: false })
+  telefonoContacto!: string;
   @CreateDateColumn() createdAt: Date;
   @UpdateDateColumn() updatedAt: Date;
-  @Column({ type: 'timestamptz', nullable: true }) completedAt?: Date | null;
-  @Column({ type: 'text', nullable: true }) proofUrl?: string | null;
+  @Column({ type: "text", nullable: true }) motivoObjecion?: string | null;
+  @Column({ type: "text", nullable: true }) comentarioFinal?: string | null;
+  @Column({ type: "timestamptz", nullable: true }) completedAt?: Date | null;
+  @Column({ type: "text", nullable: true }) proofUrl?: string | null;
 }

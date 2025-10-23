@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   UploadedFile,
@@ -28,8 +29,15 @@ export class CustomersController {
     return this.service.findAll();
   }
 
+  // Place specific routes before parameterized ones to avoid conflicts like /customers/conflicts matching ":id"
+  @Get("conflicts")
+  @Roles(Role.ADMIN)
+  listConflicts() {
+    return this.service.listConflicts();
+  }
+
   @Get(":id")
-  findOne(@Param("id") id: string) {
+  findOne(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string) {
     return this.service.findOne(id);
   }
 
@@ -41,13 +49,16 @@ export class CustomersController {
 
   @Patch(":id")
   @Roles(Role.ADMIN)
-  update(@Param("id") id: string, @Body() dto: UpdateCustomerDto) {
+  update(
+    @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
+    @Body() dto: UpdateCustomerDto
+  ) {
     return this.service.update(id, dto);
   }
 
   @Delete(":id")
   @Roles(Role.ADMIN)
-  remove(@Param("id") id: string) {
+  remove(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string) {
     return this.service.remove(id);
   }
 
@@ -56,11 +67,5 @@ export class CustomersController {
   @UseInterceptors(FileInterceptor("file"))
   importCsv(@UploadedFile() file: Express.Multer.File) {
     return this.service.importCsv(file);
-  }
-
-  @Get("conflicts")
-  @Roles(Role.ADMIN)
-  listConflicts() {
-    return this.service.listConflicts();
   }
 }
