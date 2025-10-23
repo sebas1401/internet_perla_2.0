@@ -21,4 +21,12 @@ export class AttendanceService {
       checks: filtered,
     };
   }
+
+  async summary(name: string) {
+    const all = await this.repo.list();
+    const filtered = all.filter(a => a.name === name);
+    const total = filtered.length;
+    const last = filtered[0] || null;
+    return { total, last };
+  }
 }

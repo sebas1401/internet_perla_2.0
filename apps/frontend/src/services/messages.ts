@@ -4,55 +4,29 @@ export interface Contact {
   id: string;
   email: string;
   name?: string;
-  avatar?: string;
   lastAt?: string;
   unreadCount?: number;
 }
-
 export interface Message {
   id: string;
-  sender: {
-    id: string;
-    name?: string;
-  };
-  recipient: {
-    id: string;
-    name?: string;
-  };
-  content: string;
+  content?: string;
+  imageUrl?: string;
   createdAt: string;
-  read: boolean;
+  sender: { id: string; email: string; name?: string };
+  recipient: { id: string; email: string; name?: string };
 }
 
-export async function listContacts(): Promise<Contact[]> {
-  try {
-    const response = await api.get('/messages/contacts');
-    return response.data || [];
-  } catch (error) {
-    console.error('Error listing contacts:', error);
-    return [];
-  }
+export async function listContacts(){
+  const { data } = await api.get<Contact[]>('/messages/contacts');
+  return data;
 }
 
-export async function getThread(contactId: string): Promise<Message[]> {
-  try {
-    const response = await api.get(`/messages/thread/${contactId}`);
-    return response.data || [];
-  } catch (error) {
-    console.error('Error fetching thread:', error);
-    return [];
-  }
+export async function getThread(userId: string){
+  const { data } = await api.get<Message[]>(`/messages/thread/${userId}`);
+  return data;
 }
 
-export async function sendMessage(recipientId: string, content: string): Promise<Message> {
-  try {
-    const response = await api.post('/messages/send', {
-      recipientId,
-      content,
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Error sending message:', error);
-    throw error;
-  }
+export async function sendMessage(recipientId: string, content?: string){
+  const { data } = await api.post<Message>('/messages/send', { recipientId, content });
+  return data;
 }

@@ -23,6 +23,9 @@ export class User {
   @Column({ nullable: true })
   name?: string;
 
+  // Sueldo diario del empleado (Q), opcional
+  @Column('decimal', { precision: 12, scale: 2, nullable: true })
+  dailySalary?: number | null;
   @Column({ default: false })
   isBlocked: boolean;
 }
