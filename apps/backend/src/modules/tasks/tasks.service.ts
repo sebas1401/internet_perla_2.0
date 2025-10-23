@@ -230,12 +230,12 @@ export class TasksService {
     const customer = c
       ? {
           id: c.id,
-          nombreCompleto: c.name,
-          direccion: c.address ?? undefined,
-          telefono: c.phone ?? undefined,
-          ipAsignada: c.ipAsignada ?? undefined,
-          latitud: c.latitud ?? undefined,
-          longitud: c.longitud ?? undefined,
+          nombreCompleto: c.nombreCompleto || c.name,
+          direccion: c.direccion || c.address || null,
+          telefono: c.telefono || c.phone || null,
+          ipAsignada: c.ipAsignada ?? null,
+          latitud: c.latitud ?? null,
+          longitud: c.longitud ?? null,
         }
       : null;
     const assignedTo = t.assignedTo
