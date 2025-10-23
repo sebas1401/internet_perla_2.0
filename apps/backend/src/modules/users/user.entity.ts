@@ -1,23 +1,23 @@
-import { Column, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn, Unique } from "typeorm";
 
 export enum Role {
-  ADMIN = 'ADMIN',
-  USER = 'USER',
+  ADMIN = "ADMIN",
+  USER = "USER",
 }
 
 @Entity()
-@Unique(['email'])
+@Unique(["email"])
 export class User {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @Column()
   email: string;
 
-  @Column({ name: 'password_hash' })
+  @Column({ name: "password_hash" })
   passwordHash: string;
 
-  @Column({ type: 'enum', enum: Role, default: Role.USER })
+  @Column({ type: "enum", enum: Role, default: Role.USER })
   role: Role;
 
   @Column({ nullable: true })
@@ -30,3 +30,22 @@ export class User {
   isBlocked: boolean;
 }
 
+  @Column('decimal', {
+    precision: 10,
+    scale: 6,
+    nullable: true,
+    name: 'latitude',
+  })
+  latitude?: number;
+
+  @Column('decimal', {
+    precision: 10,
+    scale: 6,
+    nullable: true,
+    name: 'longitude',
+  })
+  longitude?: number;
+
+  @Column({ type: 'boolean', default: false })
+  isBlocked?: boolean;
+}

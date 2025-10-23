@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Not, IsNull, Repository } from 'typeorm';
 import { User } from '../modules/users/user.entity';
 
 @Injectable()
@@ -12,5 +12,13 @@ export class UsersRepository {
   save(user: Partial<User>) { return this.repo.save(user); }
   async remove(user: User) { return this.repo.remove(user); }
   count() { return this.repo.count(); }
-}
 
+  findAllWithLocation() {
+    return this.repo.find({
+      where: {
+        latitude: Not(IsNull()),
+        longitude: Not(IsNull()),
+      },
+    });
+  }
+}

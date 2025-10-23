@@ -2,10 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { AttendanceRecord } from './attendance-record.entity';
 import { CheckDto } from './dto';
 import { AttendanceRepository } from '../../repositories/attendance.repository';
+import { RealtimeGateway } from '../../realtime/realtime.gateway';
 
 @Injectable()
 export class AttendanceService {
-  constructor(private repo: AttendanceRepository) {}
+  constructor(private repo: AttendanceRepository, private rt: RealtimeGateway) {}
   list() { return this.repo.list(); }
   check(dto: CheckDto) { return this.repo.save(dto as Partial<AttendanceRecord>); }
   async summary(name: string) {
@@ -20,13 +21,5 @@ export class AttendanceService {
       todayRecords: todayRecords.length,
       checks: filtered,
     };
-  }
-
-  async summary(name: string) {
-    const all = await this.repo.list();
-    const filtered = all.filter(a => a.name === name);
-    const total = filtered.length;
-    const last = filtered[0] || null;
-    return { total, last };
   }
 }
