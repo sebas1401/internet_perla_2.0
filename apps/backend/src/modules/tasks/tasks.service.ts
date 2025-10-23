@@ -34,6 +34,7 @@ export class TasksService {
     if (!customer) throw new NotFoundException("Cliente no encontrado");
     if (!createdBy)
       throw new NotFoundException("Usuario creador no encontrado");
+
     const saved = await this.tasks.save(
       this.tasks.create({
         title: dto.title,
@@ -45,6 +46,7 @@ export class TasksService {
         status: "PENDIENTE",
       })
     );
+
     this.rt.emitToUser(assignedTo.id, "task:created", saved);
     this.rt.broadcastToAdmins("task:created", saved);
     this.rt.broadcastAll("tasks:update", saved);
@@ -59,15 +61,18 @@ export class TasksService {
     const qb = this.tasks
       .createQueryBuilder("t")
       .leftJoinAndSelect("t.customer", "customer")
+      .addSelect(["customer.ipAsignada", "customer.latitud", "customer.longitud"])
       .leftJoinAndSelect("t.assignedTo", "assignedTo")
       .leftJoinAndSelect("t.createdBy", "createdBy")
       .orderBy("t.createdAt", "DESC");
+
     if (filters?.status)
       qb.andWhere("t.status = :status", { status: filters.status });
     if (filters?.assignedToId)
       qb.andWhere("assignedTo.id = :aid", { aid: filters.assignedToId });
     if (filters?.customerId)
       qb.andWhere("customer.id = :cid", { cid: filters.customerId });
+
     const tasks = await qb.getMany();
     return tasks.map((t) => this.toSpanishTask(t));
   }
@@ -79,14 +84,17 @@ export class TasksService {
     const qb = this.tasks
       .createQueryBuilder("t")
       .leftJoinAndSelect("t.customer", "customer")
+      .addSelect(["customer.ipAsignada", "customer.latitud", "customer.longitud"])
       .leftJoinAndSelect("t.assignedTo", "assignedTo")
       .leftJoinAndSelect("t.createdBy", "createdBy")
       .where("assignedTo.id = :uid", { uid: userId })
       .orderBy("t.createdAt", "DESC");
+
     if (filters?.status)
       qb.andWhere("t.status = :status", { status: filters.status });
     if (filters?.customerId)
       qb.andWhere("customer.id = :cid", { cid: filters.customerId });
+
     return qb.getMany().then((arr) => arr.map((t) => this.toSpanishTask(t)));
   }
 
@@ -113,10 +121,10 @@ export class TasksService {
   ) {
     const task = await this.tasks.findOne({ where: { id } });
     if (!task) throw new NotFoundException("Tarea no encontrada");
+
     if (actor.role === "USER") {
       if (task.assignedTo?.id !== actor.id)
         throw new ForbiddenException("No autorizado");
-      // Worker can only change status or description
       if (dto.status) {
         const next = this.normalizeStatus(dto.status);
         if (next === "OBJETADA") {
@@ -135,12 +143,10 @@ export class TasksService {
           }
           task.comentarioFinal = dto.comentarioFinal.trim();
         } else if (dto.comentarioFinal) {
-          // No permitir comentarioFinal si no se está completando
           throw new ForbiddenException(
             "comentarioFinal solo se permite cuando status es COMPLETADA"
           );
         }
-        // No permitir volver a PENDIENTE si ya estaba objetada
         if (task.status === "OBJETADA" && next === "PENDIENTE") {
           throw new ForbiddenException(
             "No se puede regresar a PENDIENTE una tarea objetada"
@@ -150,9 +156,7 @@ export class TasksService {
       }
       if (dto.description !== undefined) task.description = dto.description;
     } else {
-      // Admin can change all fields
       if (dto.status) {
-        // Si la tarea está OBJETADA, el admin no puede cambiar directamente sin re-asignar o borrar
         if (
           task.status === "OBJETADA" &&
           (!dto.assignedToId || dto.assignedToId === task.assignedTo?.id)
@@ -163,7 +167,6 @@ export class TasksService {
         }
         const next = this.normalizeStatus(dto.status);
         if (next === "COMPLETADA") {
-          // Solo permitir comentarioFinal cuando se completa
           if (!dto.comentarioFinal || !dto.comentarioFinal.trim()) {
             throw new ForbiddenException(
               "comentarioFinal es requerido para completar"
@@ -192,13 +195,13 @@ export class TasksService {
         });
         if (!user) throw new NotFoundException("Trabajador no encontrado");
         task.assignedTo = user;
-        // Al reasignar una tarea objetada, reiniciar estado a PENDIENTE y limpiar motivo
         if (task.status === "OBJETADA") {
           task.status = "PENDIENTE";
           task.motivoObjecion = null as any;
         }
       }
     }
+
     const saved = await this.tasks.save(task);
     if (saved.assignedTo?.id)
       this.rt.emitToUser(saved.assignedTo.id, "task:updated", saved);
@@ -219,7 +222,6 @@ export class TasksService {
   private normalizeStatus(
     s: string
   ): "PENDIENTE" | "EN_PROCESO" | "COMPLETADA" | "OBJETADA" {
-    // Accept legacy values for compatibility
     if (s === "PENDING") return "PENDIENTE";
     if (s === "COMPLETED") return "COMPLETADA";
     return s as any as "PENDIENTE" | "EN_PROCESO" | "COMPLETADA" | "OBJETADA";
@@ -238,6 +240,7 @@ export class TasksService {
           longitud: c.longitud ?? null,
         }
       : null;
+
     const assignedTo = t.assignedTo
       ? {
           id: t.assignedTo.id,
@@ -246,6 +249,7 @@ export class TasksService {
           role: (t.assignedTo as any).role,
         }
       : null;
+
     const createdBy = t.createdBy
       ? {
           id: t.createdBy.id,
@@ -254,6 +258,7 @@ export class TasksService {
           role: (t.createdBy as any).role,
         }
       : null;
+
     return {
       id: t.id,
       title: t.title,

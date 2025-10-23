@@ -24,6 +24,9 @@ type Customer = {
   nombreCompleto: string;
   direccion?: string;
   telefono?: string;
+  ipAsignada?: string;
+  latitud?: string | null;
+  longitud?: string | null;
 };
 
 const statusColors: Record<TaskStatus, string> = {
@@ -248,6 +251,9 @@ export default function TasksAdmin() {
               <th className="p-3">Cliente</th>
               <th className="p-3">Dirección</th>
               <th className="p-3">Teléfono</th>
+              <th className="p-3">IP</th>
+              <th className="p-3 hidden sm:table-cell">Latitud</th>
+              <th className="p-3 hidden sm:table-cell">Longitud</th>
               <th className="p-3">Asignado a</th>
               <th className="p-3">Teléfono contacto</th>
               <th className="p-3">Estado</th>
@@ -286,6 +292,15 @@ export default function TasksAdmin() {
                 </td>
                 <td className="p-3 text-slate-600">
                   {(t.customer as any)?.telefono || "-"}
+                </td>
+                <td className="p-3 text-slate-600">
+                  {(t.customer as any)?.ipAsignada ?? "—"}
+                </td>
+                <td className="p-3 text-slate-600 hidden sm:table-cell">
+                  {(t.customer as any)?.latitud ?? "—"}
+                </td>
+                <td className="p-3 text-slate-600 hidden sm:table-cell">
+                  {(t.customer as any)?.longitud ?? "—"}
                 </td>
                 <td className="p-3 relative">
                   <div className="flex items-center gap-2">
@@ -391,7 +406,7 @@ export default function TasksAdmin() {
             ))}
             {tasks.length === 0 && (
               <tr>
-                <td className="p-4 text-slate-500" colSpan={7}>
+                <td className="p-4 text-slate-500" colSpan={11}>
                   Sin tareas
                 </td>
               </tr>
@@ -457,6 +472,18 @@ export default function TasksAdmin() {
                   <div>
                     <span className="font-semibold">Teléfono:</span>{" "}
                     {selectedCustomer.telefono || "-"}
+                  </div>
+                  <div>
+                    <span className="font-semibold">IP asignada:</span>{" "}
+                    {selectedCustomer.ipAsignada ?? "-"}
+                  </div>
+                  <div className="hidden sm:block">
+                    <span className="font-semibold">Latitud:</span>{" "}
+                    {selectedCustomer.latitud ?? "-"}
+                  </div>
+                  <div className="hidden sm:block">
+                    <span className="font-semibold">Longitud:</span>{" "}
+                    {selectedCustomer.longitud ?? "-"}
                   </div>
                 </div>
               )}
