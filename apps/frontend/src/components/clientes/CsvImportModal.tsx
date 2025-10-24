@@ -74,65 +74,66 @@ export default function CsvImportModal({ open, onClose, onSubmit }: Props) {
       {open && (
         <>
           <motion.div
-            className="fixed inset-0 z-40 bg-black/30"
+            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
           />
           <motion.div
-            className="fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white shadow-2xl"
+            className="fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-slate-800/80 backdrop-blur-lg border border-slate-700 shadow-2xl shadow-emerald-500/20 text-white"
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
           >
-            <div className="border-b p-4">
-              <h3 className="text-lg font-semibold">
+            <div className="border-b border-slate-700 p-6">
+              <h3 className="text-2xl font-semibold text-emerald-400">
                 Importar clientes desde CSV
               </h3>
-              <p className="text-xs text-slate-500">
-                Encabezados soportados: ip/ipAsignada/ip_asignada, name/nombre,
-                phone/telefono, address/direccion, latitud, longitud,
-                plan/planDeInternet/plan_de_internet
+              <p className="text-sm text-slate-400 mt-1">
+                Columnas soportadas: ip, nombre, telefono, direccion, latitud, longitud, plan.
               </p>
             </div>
-            <div className="p-4 space-y-3">
+            <div className="p-6 space-y-4">
               {error && (
-                <div className="rounded bg-rose-50 p-2 text-sm text-rose-700">
+                <div className="rounded-lg bg-rose-500/20 p-3 text-sm text-rose-300 border border-rose-500/30">
                   {error}
                 </div>
               )}
-              <input
-                type="file"
-                accept=".csv"
-                onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
-              />
+              <div className="p-6 border-2 border-dashed border-slate-600 rounded-xl text-center">
+                <input
+                    type="file"
+                    accept=".csv"
+                    className="text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-500/20 file:text-emerald-300 hover:file:bg-emerald-500/30"
+                    onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
+                />
+              </div>
               {missing.length > 0 && (
-                <div className="rounded border border-amber-200 bg-amber-50 p-2 text-xs text-amber-800">
-                  Advertencia: faltan columnas {missing.join(", ")}. La
-                  importación continuará y los campos faltantes se dejarán
-                  vacíos.
+                <div className="rounded-lg bg-amber-500/20 p-3 text-sm text-amber-300 border border-amber-500/30">
+                  Advertencia: Faltan las columnas: {missing.join(", ")}. La importación continuará y los campos se dejarán vacíos.
                 </div>
               )}
-              <div className="rounded bg-emerald-50 p-2 text-xs text-emerald-700">
-                Los duplicados se detectan por combinación de nombre +
-                dirección. Los conflictos se registran para revisión.
+              <div className="rounded-lg bg-emerald-500/10 p-3 text-xs text-emerald-400 border border-emerald-500/20">
+                Los duplicados se detectan por combinación de nombre + dirección. Los conflictos se registran para revisión.
               </div>
             </div>
-            <div className="flex items-center justify-end gap-2 border-t p-4">
-              <button
-                className="rounded px-4 py-2 text-slate-600 hover:bg-slate-100"
-                onClick={onClose}
-              >
-                Cancelar
-              </button>
-              <button
-                className="rounded bg-emerald-600 px-4 py-2 text-white hover:bg-emerald-700 disabled:opacity-60"
-                onClick={handleSubmit}
-                disabled={submitting}
-              >
-                {submitting ? "Importando..." : "Importar"}
-              </button>
+            <div className="flex items-center justify-end gap-3 border-t border-slate-700 p-6">
+                <motion.button
+                    className="px-4 py-2 rounded-lg border border-slate-600 text-slate-300 text-sm hover:bg-slate-700 transition-colors"
+                    onClick={onClose}
+                    whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                >
+                    Cancelar
+                </motion.button>
+                <motion.button
+                    className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 disabled:opacity-60 transition-all"
+                    onClick={handleSubmit}
+                    disabled={submitting}
+                    whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                >
+                    {submitting ? "Importando..." : "Importar Archivo"}
+                </motion.button>
             </div>
           </motion.div>
         </>

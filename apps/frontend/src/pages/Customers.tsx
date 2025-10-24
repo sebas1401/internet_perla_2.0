@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { EmptyState } from "../components/ip/EmptyState";
 import { ErrorState } from "../components/ip/ErrorState";
 import { LoadingState } from "../components/ip/LoadingState";
@@ -19,6 +20,7 @@ export default function Customers() {
   const [form, setForm] = useState({ name: "", phone: "" });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>();
+
   const load = () => {
     setLoading(true);
     setError(undefined);
@@ -28,18 +30,54 @@ export default function Customers() {
       .catch((e) => setError(e?.response?.data?.message || "Error"))
       .finally(() => setLoading(false));
   };
+
   useEffect(() => {
     load();
   }, []);
+
   const create = async () => {
     if (!form.name) return;
     await api.post("/customers", form);
     setForm({ name: "", phone: "" });
     load();
   };
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+      },
+    },
+  };
+
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold text-primary mb-4">Clientes</h1>
+    <motion.div
+      className="p-6"
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
+      <motion.h1
+        className="text-3xl font-bold text-white mb-6"
+        variants={itemVariants}
+      >
+        Clientes
+      </motion.h1>
+
       {loading && <LoadingState message="Cargando clientes..." />}
       {error && (
         <div className="mb-4">
@@ -55,41 +93,60 @@ export default function Customers() {
           />
         </div>
       )}
-      <div className="bg-white rounded shadow p-4 mb-6 grid md:grid-cols-3 gap-2">
+
+      <motion.div
+        className="bg-white/10 backdrop-blur-lg rounded-xl shadow-lg shadow-emerald-500/50 border border-slate-300 p-4 mb-6 grid md:grid-cols-3 gap-4"
+        variants={itemVariants}
+      >
         <input
-          className="border rounded px-3 py-2"
+          className="bg-transparent border-b border-emerald-400 text-white placeholder-gray-300 focus:outline-none focus:border-emerald-300"
           placeholder="Nombre"
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
         />
         <input
-          className="border rounded px-3 py-2"
+          className="bg-transparent border-b border-emerald-400 text-white placeholder-gray-300 focus:outline-none focus:border-emerald-300"
           placeholder="Teléfono"
           value={form.phone}
           onChange={(e) => setForm({ ...form, phone: e.target.value })}
         />
-        <button onClick={create} className="bg-primary text-white rounded px-4">
+        <motion.button
+          onClick={create}
+          className="bg-emerald-500 text-white rounded-lg px-4 py-2 hover:bg-emerald-600 transition-colors"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
           Crear
-        </button>
-      </div>
-      <div className="bg-white rounded shadow overflow-hidden">
-        <table className="min-w-full text-sm">
-          <thead className="bg-gray-100">
+        </motion.button>
+      </motion.div>
+
+      <motion.div
+        className="bg-white/10 backdrop-blur-lg rounded-xl shadow-lg shadow-emerald-500/50 border border-slate-300 overflow-hidden"
+        variants={itemVariants}
+      >
+        <table className="min-w-full text-sm text-white">
+          <thead className="bg-white/5">
             <tr>
-              <th className="px-3 py-2 text-left">Nombre</th>
-              <th className="px-3 py-2 text-left">Teléfono</th>
+              <th className="px-4 py-3 text-left font-semibold">Nombre</th>
+              <th className="px-4 py-3 text-left font-semibold">Teléfono</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((c) => (
-              <tr key={c.id} className="border-t">
-                <td className="px-3 py-2">{c.name}</td>
-                <td className="px-3 py-2">{c.phone}</td>
-              </tr>
+              <motion.tr
+                key={c.id}
+                className="border-t border-slate-300/20"
+                variants={itemVariants}
+                initial="hidden"
+                animate="visible"
+              >
+                <td className="px-4 py-3">{c.name}</td>
+                <td className="px-4 py-3">{c.phone}</td>
+              </motion.tr>
             ))}
           </tbody>
         </table>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

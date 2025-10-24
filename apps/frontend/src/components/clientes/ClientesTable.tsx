@@ -9,6 +9,8 @@ interface Props {
   onQueryChange: (v: string) => void;
 }
 
+const glassCard = 'backdrop-blur-xl bg-white/80 shadow-xl shadow-emerald-100/60 border border-white/30';
+
 export default function ClientesTable({
   rows,
   onEdit,
@@ -28,12 +30,12 @@ export default function ClientesTable({
   }, [rows, query]);
 
   return (
-    <div className="bg-white rounded shadow overflow-hidden">
-      <div className="p-3 border-b flex items-center gap-2">
+    <div className={`${glassCard} rounded-2xl overflow-hidden`}>
+      <div className="p-4 border-b border-black/10 flex items-center gap-4">
         <input
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
-          className="border rounded px-3 py-2 w-full md:w-80"
+          className="w-full md:w-80 bg-white/50 border border-slate-300 rounded-lg px-3 py-2 text-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
           placeholder="Buscar por nombre o dirección..."
         />
         {query && suggestions.length > 0 && (
@@ -42,51 +44,53 @@ export default function ClientesTable({
           </div>
         )}
       </div>
-      <table className="min-w-full text-sm">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="px-3 py-2 text-left">Dirección IP</th>
-            <th className="px-3 py-2 text-left">Nombre</th>
-            <th className="px-3 py-2 text-left">Teléfono</th>
-            <th className="px-3 py-2 text-left">Dirección</th>
-            <th className="px-3 py-2 text-left">Latitud</th>
-            <th className="px-3 py-2 text-left">Longitud</th>
-            <th className="px-3 py-2 text-left">Plan</th>
-            <th className="px-3 py-2 text-left">Estado</th>
-            <th className="px-3 py-2"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((c) => (
-            <tr key={c.id} className="border-t">
-              <td className="px-3 py-2">{c.ipAsignada || "-"}</td>
-              <td className="px-3 py-2">{c.nombreCompleto}</td>
-              <td className="px-3 py-2">{c.telefono || "-"}</td>
-              <td className="px-3 py-2">{c.direccion || "-"}</td>
-              <td className="px-3 py-2">{c.latitud || "-"}</td>
-              <td className="px-3 py-2">{c.longitud || "-"}</td>
-              <td className="px-3 py-2">{c.plan?.name || "-"}</td>
-              <td className="px-3 py-2">{c.estadoCliente || "-"}</td>
-              <td className="px-3 py-2 text-right">
-                <div className="flex gap-2 justify-end">
-                  <button
-                    onClick={() => onEdit(c)}
-                    className="px-3 py-1 rounded bg-emerald-600 text-white text-xs hover:bg-emerald-700"
-                  >
-                    Editar
-                  </button>
-                  <button
-                    onClick={() => onDelete(c)}
-                    className="px-3 py-1 rounded bg-rose-600 text-white text-xs hover:bg-rose-700"
-                  >
-                    Borrar
-                  </button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="overflow-x-auto">
+        <table className="min-w-full text-sm text-slate-800">
+            <thead className="bg-black/5">
+                <tr>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-700">Dirección IP</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-700">Nombre</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-700">Teléfono</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-700">Dirección</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-700">Latitud</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-700">Longitud</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-700">Plan</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-700">Estado</th>
+                    <th className="px-4 py-3"></th>
+                </tr>
+            </thead>
+            <tbody>
+            {rows.map((c) => (
+                <tr key={c.id} className="border-t border-black/5">
+                <td className="px-4 py-3 whitespace-nowrap text-slate-600">{c.ipAsignada || "-"}</td>
+                <td className="px-4 py-3 font-medium text-slate-700">{c.nombreCompleto}</td>
+                <td className="px-4 py-3 whitespace-nowrap text-slate-600">{c.telefono || "-"}</td>
+                <td className="px-4 py-3 text-slate-600">{c.direccion || "-"}</td>
+                <td className="px-4 py-3 whitespace-nowrap text-slate-600">{c.latitud || "-"}</td>
+                <td className="px-4 py-3 whitespace-nowrap text-slate-600">{c.longitud || "-"}</td>
+                <td className="px-4 py-3 whitespace-nowrap text-slate-600">{c.plan?.name || "-"}</td>
+                <td className="px-4 py-3 whitespace-nowrap text-slate-600">{c.estadoCliente || "-"}</td>
+                <td className="px-4 py-3 text-right">
+                    <div className="flex gap-2 justify-end">
+                    <button
+                        onClick={() => onEdit(c)}
+                        className="px-3 py-1 rounded-md bg-emerald-500 text-white text-xs hover:bg-emerald-600 transition-colors shadow"
+                    >
+                        Editar
+                    </button>
+                    <button
+                        onClick={() => onDelete(c)}
+                        className="px-3 py-1 rounded-md bg-rose-500 text-white text-xs hover:bg-rose-600 transition-colors shadow"
+                    >
+                        Borrar
+                    </button>
+                    </div>
+                </td>
+                </tr>
+            ))}
+            </tbody>
+        </table>
+      </div>
     </div>
   );
 }

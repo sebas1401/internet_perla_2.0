@@ -30,11 +30,13 @@ type Customer = {
 };
 
 const statusColors: Record<TaskStatus, string> = {
-  PENDIENTE: "bg-gray-200 text-gray-700",
-  EN_PROCESO: "bg-amber-100 text-amber-700",
-  COMPLETADA: "bg-emerald-100 text-emerald-700",
-  OBJETADA: "bg-rose-100 text-rose-700",
+  PENDIENTE: "bg-slate-200 text-slate-700",
+  EN_PROCESO: "bg-amber-200 text-amber-800",
+  COMPLETADA: "bg-emerald-200 text-emerald-800",
+  OBJETADA: "bg-rose-200 text-rose-800",
 };
+
+const glassCard = 'backdrop-blur-xl bg-white/80 shadow-xl shadow-emerald-100/60 border border-white/30';
 
 export default function TasksAdmin() {
   const [users, setUsers] = useState<User[]>([]);
@@ -215,46 +217,56 @@ export default function TasksAdmin() {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <motion.h1
-          className="text-2xl font-bold text-primary"
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          Tareas (Admin)
-        </motion.h1>
-        <div className="flex gap-2">
-          <select
-            className="border rounded px-2 py-1"
-            value={filterStatus}
-            onChange={(e) => setFilterStatus((e.target.value || "") as any)}
-          >
-            <option value="">Todos</option>
-            <option value="PENDIENTE">Pendiente</option>
-            <option value="EN_PROCESO">En proceso</option>
-            <option value="COMPLETADA">Completada</option>
-            <option value="OBJETADA">Objetada</option>
-          </select>
-          <button
-            onClick={() => setOpen(true)}
-            className="bg-primary text-white rounded px-3 py-1"
-          >
-            ➕ Agregar tarea
-          </button>
-        </div>
-      </div>
+    <div className="relative min-h-screen flex-col overflow-hidden px-3 py-6 sm:px-6 lg:px-10">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.25),_transparent_55%),_radial-gradient(circle_at_bottom_right,_rgba(14,165,233,0.25),_transparent_60%)]" />
+        <div className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 w-[140%] bg-[conic-gradient(from_180deg_at_50%_50%,rgba(16,185,129,0.12),rgba(14,165,233,0.08),rgba(16,185,129,0.12))] blur-3xl opacity-35" />
 
-      <div className="bg-white rounded shadow p-0 animate-fadeIn overflow-auto">
-        <table className="min-w-full text-sm">
-          <thead>
-            <tr className="bg-slate-50 text-left">
-              <th className="p-3">Cliente</th>
-              <th className="p-3">Dirección</th>
-              <th className="p-3">Asignado a</th>
-              <th className="p-3">Estado</th>
-              <th className="p-3">Comentario</th>
-              <th className="p-3">Acciones</th>
+      <div className="relative z-10 flex flex-1 flex-col gap-8 overflow-hidden">
+        <header className="flex items-center justify-between">
+            <motion.h1
+                className="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl"
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+            >
+                Tareas (Admin)
+            </motion.h1>
+            <div className="flex gap-2">
+            <select
+                className="border rounded px-2 py-1"
+                value={filterStatus}
+                onChange={(e) => setFilterStatus((e.target.value || "") as any)}
+            >
+                <option value="">Todos</option>
+                <option value="PENDIENTE">Pendiente</option>
+                <option value="EN_PROCESO">En proceso</option>
+                <option value="COMPLETADA">Completada</option>
+                <option value="OBJETADA">Objetada</option>
+            </select>
+            <button
+                onClick={() => setOpen(true)}
+                className="bg-emerald-600 text-white rounded px-3 py-1 shadow hover:bg-emerald-700"
+            >
+                ➕ Agregar tarea
+            </button>
+            </div>
+        </header>
+
+      <motion.div 
+        className={`${glassCard} rounded-3xl p-0 overflow-auto`}
+        initial={{ opacity: 0, y: 20 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        transition={{ duration: 0.5, delay: 0.1 }}
+      >
+        <table className="min-w-full text-sm text-slate-800">
+          <thead className="bg-black/5">
+            <tr className="text-left">
+              <th className="p-3 font-semibold text-slate-700">Cliente</th>
+              <th className="p-3 font-semibold text-slate-700">Dirección</th>
+              <th className="p-3 font-semibold text-slate-700">Asignado a</th>
+              <th className="p-3 font-semibold text-slate-700">Estado</th>
+              <th className="p-3 font-semibold text-slate-700">Comentario</th>
+              <th className="p-3 font-semibold text-slate-700">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -265,19 +277,19 @@ export default function TasksAdmin() {
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.02 }}
-                  className={`border-t ${
+                  className={`border-t border-black/10 ${
                     t.status === "COMPLETADA"
-                      ? "bg-green-50 border-green-200 opacity-75"
+                      ? "bg-green-100/50"
                       : t.status === "OBJETADA"
-                      ? "bg-red-50 border-red-200"
+                      ? "bg-red-100/50"
                       : ""
                   }`}
                 >
                   <td className="p-3">
-                    <div className="font-medium flex items-center gap-2">
+                    <div className="font-medium flex items-center gap-2 text-slate-700">
                       {(t.customer as any)?.nombreCompleto || "-"}
                       {t.status === "OBJETADA" && (
-                        <span className="inline-flex items-center rounded px-1.5 py-0.5 bg-rose-600 text-white text-[10px] font-semibold">
+                        <span className="inline-flex items-center rounded px-1.5 py-0.5 bg-rose-500 text-white text-[10px] font-semibold">
                           OBJETADA
                         </span>
                       )}
@@ -287,11 +299,11 @@ export default function TasksAdmin() {
                   <td className="p-3 text-slate-600">
                     {(t.customer as any)?.direccion || "-"}
                   </td>
-                  <td className="p-3 relative">
+                  <td className="p-3 relative text-slate-700">
                     <div className="flex items-center gap-2">
                       <span>{t.assignedTo?.name || t.assignedTo?.email}</span>
                       <button
-                        className="text-xs text-primary underline"
+                        className="text-xs text-emerald-600 hover:underline"
                         onClick={() =>
                           setReassignFor(reassignFor === t.id ? null : t.id)
                         }
@@ -300,12 +312,12 @@ export default function TasksAdmin() {
                       </button>
                     </div>
                     {reassignFor === t.id && (
-                      <div className="absolute z-10 mt-2 w-56 bg-white border rounded shadow p-2">
+                      <div className="absolute z-10 mt-2 w-56 bg-white border border-slate-200 rounded-lg shadow-lg p-2">
                         <div className="text-[11px] text-slate-500 mb-1">
                           Selecciona trabajador
                         </div>
                         <select
-                          className="w-full border rounded px-2 py-1 text-sm"
+                          className="w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 text-sm text-slate-800"
                           defaultValue=""
                           onChange={(e) =>
                             e.target.value && onReassign(t.id, e.target.value)
@@ -325,15 +337,12 @@ export default function TasksAdmin() {
                   </td>
                   <td className="p-3">
                     <span
-                      className={`inline-flex items-center gap-2 rounded-full px-2 py-0.5 text-xs font-semibold ${
-                        statusColors[t.status]
-                      }`}
-                    >
+                      className={`inline-flex items-center gap-2 rounded-full px-2 py-0.5 text-xs font-semibold ${statusColors[t.status]}`}>
                       {t.status.replace("_", " ")}
                     </span>
                     <div className="mt-1">
                       <select
-                        className="border rounded px-2 py-1 text-xs"
+                        className="bg-white/50 border border-slate-300 rounded px-2 py-1 text-xs text-slate-800"
                         value={t.status}
                         disabled={
                           t.status === "COMPLETADA" || t.status === "OBJETADA"
@@ -377,13 +386,13 @@ export default function TasksAdmin() {
                             [t.id]: !prev[t.id],
                           }))
                         }
-                        className="text-primary hover:underline text-xs"
+                        className="text-emerald-600 hover:underline text-xs"
                       >
                         {expanded[t.id] ? "Ocultar" : "Ver más..."}
                       </button>
                       <button
                         onClick={() => onEdit(t)}
-                        className="text-primary hover:underline text-xs"
+                        className="text-sky-600 hover:underline text-xs"
                       >
                         Editar
                       </button>
@@ -397,46 +406,28 @@ export default function TasksAdmin() {
                   </td>
                 </motion.tr>
                 {expanded[t.id] && (
-                  <tr className="border-t bg-slate-50/50">
-                    <td className="p-3 text-slate-700" colSpan={6}>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                  <tr className="border-t border-black/10 bg-slate-100/50">
+                    <td className="p-4 text-slate-700" colSpan={6}>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
                         <div>
-                          <div className="text-[11px] text-slate-500">
-                            Teléfono
-                          </div>
-                          <div className="font-medium">
-                            {(t.customer as any)?.telefono ?? "—"}
-                          </div>
+                          <div className="text-[11px] text-slate-500">Teléfono</div>
+                          <div className="font-medium">{(t.customer as any)?.telefono ?? "—"}</div>
                         </div>
                         <div>
-                          <div className="text-[11px] text-slate-500">
-                            Teléfono contacto
-                          </div>
-                          <div className="font-medium">
-                            {(t as any)?.telefonoContacto ?? "—"}
-                          </div>
+                          <div className="text-[11px] text-slate-500">Teléfono contacto</div>
+                          <div className="font-medium">{(t as any)?.telefonoContacto ?? "—"}</div>
                         </div>
                         <div>
                           <div className="text-[11px] text-slate-500">IP</div>
-                          <div className="font-medium">
-                            {(t.customer as any)?.ipAsignada ?? "—"}
-                          </div>
+                          <div className="font-medium">{(t.customer as any)?.ipAsignada ?? "—"}</div>
                         </div>
                         <div>
-                          <div className="text-[11px] text-slate-500">
-                            Latitud
-                          </div>
-                          <div className="font-medium">
-                            {(t.customer as any)?.latitud ?? "—"}
-                          </div>
+                          <div className="text-[11px] text-slate-500">Latitud</div>
+                          <div className="font-medium">{(t.customer as any)?.latitud ?? "—"}</div>
                         </div>
                         <div>
-                          <div className="text-[11px] text-slate-500">
-                            Longitud
-                          </div>
-                          <div className="font-medium">
-                            {(t.customer as any)?.longitud ?? "—"}
-                          </div>
+                          <div className="text-[11px] text-slate-500">Longitud</div>
+                          <div className="font-medium">{(t.customer as any)?.longitud ?? "—"}</div>
                         </div>
                       </div>
                     </td>
@@ -446,46 +437,46 @@ export default function TasksAdmin() {
             ))}
             {tasks.length === 0 && (
               <tr>
-                <td className="p-4 text-slate-500" colSpan={6}>
-                  Sin tareas
+                <td className="p-4 text-center text-slate-500" colSpan={6}>
+                  Sin tareas para mostrar.
                 </td>
               </tr>
             )}
           </tbody>
         </table>
-      </div>
+      </motion.div>
 
       {/* Drawer */}
       {open && (
         <div className="fixed inset-0 z-40">
           <div
-            className="absolute inset-0 bg-black/20"
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setOpen(false)}
           />
           <motion.div
             initial={{ x: 400, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: 400, opacity: 0 }}
-            className="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-xl p-6 overflow-y-auto"
+            className="absolute right-0 top-0 h-full w-full max-w-md bg-white/90 backdrop-blur-lg border-l border-slate-200 shadow-2xl p-6 overflow-y-auto text-slate-800"
           >
-            <h2 className="text-lg font-semibold mb-4">
+            <h2 className="text-2xl font-semibold mb-6 text-emerald-700">
               {editingTaskId ? "Editar tarea" : "Agregar tarea"}
             </h2>
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div>
-                <label className="text-xs text-slate-500">Buscar cliente</label>
+                <label className="text-sm text-slate-600">Buscar cliente</label>
                 <input
-                  className="w-full border rounded px-2 py-1"
+                  className="w-full bg-white/80 border border-slate-300 rounded-lg px-3 py-2 mt-1 text-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
                   placeholder="Nombre o dirección"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
-                <div className="max-h-40 overflow-y-auto mt-2 border rounded">
+                <div className="max-h-40 overflow-y-auto mt-2 border border-slate-200 rounded-lg bg-white/50">
                   {filteredCustomers.map((c) => (
                     <button
                       key={c.id}
-                      className={`block w-full text-left px-2 py-1 text-sm hover:bg-slate-50 ${
-                        selectedCustomer?.id === c.id ? "bg-emerald-50" : ""
+                      className={`block w-full text-left px-3 py-2 text-sm hover:bg-slate-100/50 transition-colors ${
+                        selectedCustomer?.id === c.id ? "bg-emerald-100/70" : ""
                       }`}
                       onClick={() => !editingTaskId && setSelectedCustomer(c)}
                       disabled={!!editingTaskId}
@@ -497,42 +488,32 @@ export default function TasksAdmin() {
                     </button>
                   ))}
                   {filteredCustomers.length === 0 && (
-                    <div className="p-2 text-xs text-slate-500">
+                    <div className="p-3 text-sm text-slate-500 text-center">
                       Sin resultados
                     </div>
                   )}
                 </div>
               </div>
               {selectedCustomer && (
-                <div className="rounded border p-2 text-xs text-slate-600">
+                <div className="rounded-lg border border-slate-200 p-3 text-sm text-slate-600 bg-slate-100/50 space-y-1">
                   <div>
-                    <span className="font-semibold">Dirección:</span>{" "}
+                    <span className="font-semibold text-slate-500">Dirección:</span>{" "}
                     {selectedCustomer.direccion || "-"}
                   </div>
                   <div>
-                    <span className="font-semibold">Teléfono:</span>{" "}
+                    <span className="font-semibold text-slate-500">Teléfono:</span>{" "}
                     {selectedCustomer.telefono || "-"}
                   </div>
                   <div>
-                    <span className="font-semibold">IP asignada:</span>{" "}
+                    <span className="font-semibold text-slate-500">IP asignada:</span>{" "}
                     {selectedCustomer.ipAsignada ?? "-"}
-                  </div>
-                  <div className="hidden sm:block">
-                    <span className="font-semibold">Latitud:</span>{" "}
-                    {selectedCustomer.latitud ?? "-"}
-                  </div>
-                  <div className="hidden sm:block">
-                    <span className="font-semibold">Longitud:</span>{" "}
-                    {selectedCustomer.longitud ?? "-"}
                   </div>
                 </div>
               )}
               <div>
-                <label className="text-xs text-slate-500">
-                  Asignar trabajador
-                </label>
+                <label className="text-sm text-slate-600">Asignar trabajador</label>
                 <select
-                  className="w-full border rounded px-2 py-1"
+                  className="w-full bg-white/80 border border-slate-300 rounded-lg px-3 py-2 mt-1 text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
                   value={form.assignedToId}
                   onChange={(e) =>
                     setForm({ ...form, assignedToId: e.target.value })
@@ -547,28 +528,22 @@ export default function TasksAdmin() {
                 </select>
               </div>
               <div>
-                <label
-                  className="text-xs text-slate-500"
-                  htmlFor="telefonoContacto"
-                >
-                  Teléfono de contacto *
-                </label>
+                <label className="text-sm text-slate-600" htmlFor="telefonoContacto">Teléfono de contacto *</label>
                 <input
                   id="telefonoContacto"
-                  className="w-full border rounded px-2 py-1"
+                  className="w-full bg-white/80 border border-slate-300 rounded-lg px-3 py-2 mt-1 text-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
                   placeholder="Ej. 5523456789"
                   value={telefonoContacto}
                   onChange={(e) => setTelefonoContacto(e.target.value)}
                 />
-                <p className="mt-1 text-[11px] text-slate-500">
-                  Es el número desde el que llamó el cliente. No edita el
-                  teléfono maestro del cliente.
+                <p className="mt-1 text-xs text-slate-500">
+                  Es el número desde el que llamó el cliente. No edita el teléfono maestro del cliente.
                 </p>
               </div>
               <div>
-                <label className="text-xs text-slate-500">Título</label>
+                <label className="text-sm text-slate-600">Título</label>
                 <input
-                  className="w-full border rounded px-2 py-1"
+                  className="w-full bg-white/80 border border-slate-300 rounded-lg px-3 py-2 mt-1 text-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
                   placeholder="Ej. Revisar instalación"
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -576,11 +551,9 @@ export default function TasksAdmin() {
                 />
               </div>
               <div>
-                <label className="text-xs text-slate-500">
-                  Descripción (opcional)
-                </label>
+                <label className="text-sm text-slate-600">Descripción (opcional)</label>
                 <textarea
-                  className="w-full border rounded px-2 py-1"
+                  className="w-full bg-white/80 border border-slate-300 rounded-lg px-3 py-2 mt-1 text-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
                   rows={3}
                   placeholder="Detalles adicionales"
                   value={form.description}
@@ -589,24 +562,27 @@ export default function TasksAdmin() {
                   }
                 />
               </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <button
+              <div className="flex justify-end gap-3 pt-4">
+                <motion.button
                   onClick={() => setOpen(false)}
-                  className="px-3 py-1 rounded border"
+                  className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm hover:bg-slate-100 transition-colors"
+                  whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                 >
                   Cancelar
-                </button>
-                <button
+                </motion.button>
+                <motion.button
                   onClick={editingTaskId ? onUpdate : onCreate}
-                  className="px-3 py-1 rounded bg-primary text-white"
+                  className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-500/30"
+                  whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                 >
-                  {editingTaskId ? "Guardar" : "Agregar"}
-                </button>
+                  {editingTaskId ? "Guardar Cambios" : "Crear Tarea"}
+                </motion.button>
               </div>
             </div>
           </motion.div>
         </div>
       )}
+      </div>
     </div>
   );
 }

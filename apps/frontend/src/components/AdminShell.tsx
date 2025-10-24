@@ -310,7 +310,7 @@ export function NotificationBell() {
   if (!user) return null;
 
   return (
-    <div className="relative">
+    <div className="relative z-[9999]">
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.96 }}
@@ -327,7 +327,7 @@ export function NotificationBell() {
       <AnimatePresence>
         {open && (
           <motion.div
-            className="absolute left-1/2 z-50 mt-4 w-80 -translate-x-1/2 overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-xl"
+            className="absolute left-1/2 z-[99999] mt-4 w-80 -translate-x-1/2 overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-xl"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -483,7 +483,7 @@ export default function AdminShell({ children }: PropsWithChildren) {
           <div className="text-xs text-white/60">{user?.email}</div>
         </div>
       </aside>
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-visible">
         <header className="brand-gradient sticky top-0 z-10 px-4 py-3 text-white shadow md:hidden">
           Internet Perla
         </header>

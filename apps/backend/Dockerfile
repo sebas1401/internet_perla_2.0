@@ -2,10 +2,10 @@ FROM node:18 AS deps
 WORKDIR /app
 # Copy package manifests and patch scripts so postinstall can run
 COPY package.json package-lock.json* ./
-COPY scripts ./scripts
+# COPY scripts ./scripts
 RUN npm ci || npm install
 # Ensure jwt sign.js is patched even if lifecycle scripts are skipped
-RUN node scripts/postinstall-fix-jwt.cjs || true
+# RUN node scripts/postinstall-fix-jwt.cjs || true
 # Fallback: apply patch via sed in case the node script didn't modify it
 RUN sed -i "s/isValid: includes.bind(null, SUPPORTED_ALGS)/isValid: function (val) { return SUPPORTED_ALGS.indexOf(val) !== -1; }/" node_modules/jsonwebtoken/sign.js || true
 RUN node -e "const fs=require('fs');const p='node_modules/jsonwebtoken/sign.js';let s=fs.readFileSync(p,'utf8');const before=s; s=s.replace(/isValid:\s*includes\.bind\(null, SUPPORTED_ALGS\)/,'isValid: function (val) { return SUPPORTED_ALGS.indexOf(val) !== -1; }'); if(before!==s){fs.writeFileSync(p,s); console.log('Patched jsonwebtoken/sign.js');} else {console.log('No patch applied (pattern not found)');}"

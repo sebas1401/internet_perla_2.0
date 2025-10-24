@@ -182,7 +182,7 @@ export function UserNotificationBell(){
   if (!user) return null;
 
   return (
-    <div className="relative">
+    <div className="relative z-[9999]">
       <motion.button
         whileHover={{ scale: 1.04 }}
         whileTap={{ scale: 0.96 }}
@@ -199,7 +199,7 @@ export function UserNotificationBell(){
       <AnimatePresence>
         {open && (
           <motion.div
-            className="absolute right-0 mt-3 w-80 origin-top-right overflow-hidden rounded-3xl border border-emerald-200/70 bg-white text-slate-900 shadow-2xl"
+            className="absolute right-0 mt-3 w-80 origin-top-right overflow-hidden rounded-3xl border border-emerald-200/70 bg-white text-slate-900 shadow-2xl z-[99999]"
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
