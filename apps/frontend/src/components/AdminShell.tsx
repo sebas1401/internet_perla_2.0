@@ -1,25 +1,33 @@
-﻿import { PropsWithChildren, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+﻿import { AnimatePresence, motion } from "framer-motion";
 import {
   Bell,
-  Home,
-  Clock,
   Boxes,
-  DollarSign,
   ClipboardList,
-  Users2,
+  Clock,
+  DollarSign,
+  Home,
+  LogOut,
   Map,
   MessageSquare,
-  LogOut,
   Settings,
-} from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
-import { useSocket } from '../hooks/useSocket';
-import api from '../services/api';
-import { listContacts, type Contact } from '../services/messages';
+  Users,
+  Users2,
+} from "lucide-react";
+import {
+  PropsWithChildren,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
+import { useSocket } from "../hooks/useSocket";
+import api from "../services/api";
+import { listContacts, type Contact } from "../services/messages";
 
-type AdminNotificationType = 'inventory' | 'tasks' | 'messages';
+type AdminNotificationType = "inventory" | "tasks" | "messages";
 
 interface NotificationItem {
   id: AdminNotificationType;
@@ -39,24 +47,34 @@ interface SeenRecord {
 interface Task {
   id: string;
   title: string;
-  description: string;
-  status: 'PENDING' | 'COMPLETED';
+  description?: string;
+  status:
+    | "PENDIENTE"
+    | "EN_PROCESO"
+    | "COMPLETADA"
+    | "OBJETADA"
+    | "PENDING"
+    | "COMPLETED";
   createdAt?: string;
   updatedAt?: string;
 }
 
-const getTimestamp = (value?: string) => (value ? new Date(value).getTime() : 0);
+const getTimestamp = (value?: string) =>
+  value ? new Date(value).getTime() : 0;
 
 const navItems = [
-  { to: '/', label: 'Dashboard', icon: Home },
-  { to: '/attendance', label: 'Asistencia', icon: Clock },
-  { to: '/finance', label: 'Finanzas', icon: DollarSign },
-  { to: '/inventory', label: 'Inventario', icon: Boxes },
-  { to: '/tasks-admin', label: 'Tareas', icon: ClipboardList },
-  { to: '/workers', label: 'Trabajadores', icon: Users2 },
-  { to: '/mapa-de-ubicacion', label: 'Mapa de Ubicacion', icon: Map },
-  { to: '/messages', label: 'Mensajes', icon: MessageSquare },
+
+  { to: "/", label: "Dashboard", icon: Home },
+  { to: "/attendance", label: "Asistencia", icon: Clock },
+  { to: "/finance", label: "Finanzas", icon: DollarSign },
+  { to: "/inventory", label: "Inventario", icon: Boxes },
+  { to: "/tasks-admin", label: "Tareas", icon: ClipboardList },
+  { to: "/admin/clientes", label: "Clientes", icon: Users },
+  { to: "/workers", label: "Trabajadores", icon: Users2 },
+  { to: "/mapa-de-ubicacion", label: "Mapa de Ubicacion", icon: Map },
+  { to: "/messages", label: "Mensajes", icon: MessageSquare },
 ];
+
 
 export function NotificationBell() {
   const { user } = useAuth();
@@ -72,11 +90,14 @@ export function NotificationBell() {
     openRef.current = open;
   }, [open]);
 
-  const storageBase = useMemo(() => (user ? `ip_admin_seen_${user.sub}` : ''), [user?.sub]);
+  const storageBase = useMemo(
+    () => (user ? `ip_admin_seen_${user.sub}` : ""),
+    [user?.sub]
+  );
 
   const readSeen = useCallback(
     (type: AdminNotificationType): SeenRecord => {
-      if (!storageBase || typeof window === 'undefined') return { time: 0 };
+      if (!storageBase || typeof window === "undefined") return { time: 0 };
       try {
         const raw = window.localStorage.getItem(`${storageBase}_${type}`);
         if (!raw) return { time: 0 };
@@ -86,21 +107,24 @@ export function NotificationBell() {
         return { time: 0 };
       }
     },
-    [storageBase],
+    [storageBase]
   );
 
   const writeSeen = useCallback(
     (type: AdminNotificationType, record: SeenRecord) => {
-      if (!storageBase || typeof window === 'undefined') return;
+      if (!storageBase || typeof window === "undefined") return;
       const key = `${storageBase}_${type}`;
       const previous = readSeen(type);
       const next: SeenRecord = {
         time: Math.max(record.time || 0, previous.time || 0),
-        signature: record.signature !== undefined ? record.signature : previous.signature,
+        signature:
+          record.signature !== undefined
+            ? record.signature
+            : previous.signature,
       };
       window.localStorage.setItem(key, JSON.stringify(next));
     },
-    [storageBase, readSeen],
+    [storageBase, readSeen]
   );
 
   const loadNotifications = useCallback(async () => {
@@ -116,9 +140,9 @@ export function NotificationBell() {
 
     try {
       const [stocksRes, itemsRes, tasksRes, contactsRes] = await Promise.all([
-        api.get('/inventory/stocks'),
-        api.get('/inventory/items'),
-        api.get<Task[]>('/tasks/mine'),
+        api.get("/inventory/stocks"),
+        api.get("/inventory/items"),
+        api.get<Task[]>("/tasks/mine"),
         listContacts(),
       ]);
 
@@ -134,7 +158,7 @@ export function NotificationBell() {
 
       const lowStockItems = (inventoryItems as any[]).filter((item) => {
         const quantity = totals[item.id] || 0;
-        return typeof item.minStock === 'number' && quantity <= item.minStock;
+        return typeof item.minStock === "number" && quantity <= item.minStock;
       });
 
       let latestInventoryTs = 0;
@@ -146,59 +170,67 @@ export function NotificationBell() {
           return `${item.id}:${quantity}`;
         })
         .sort()
-        .join('|');
+        .join("|");
 
       if (latestInventoryTs === 0 && lowStockItems.length > 0) {
         latestInventoryTs = Date.now();
       }
 
       if (lowStockItems.length === 0) {
-        const seenInventory = readSeen('inventory');
+        const seenInventory = readSeen("inventory");
         if (seenInventory.signature) {
-          writeSeen('inventory', { time: seenInventory.time || Date.now(), signature: '' });
+          writeSeen("inventory", {
+            time: seenInventory.time || Date.now(),
+            signature: "",
+          });
         }
       }
 
       const notifications: NotificationItem[] = [];
 
       if (lowStockItems.length > 0) {
-        const seenInventory = readSeen('inventory');
+        const seenInventory = readSeen("inventory");
         if (inventorySignature !== seenInventory.signature) {
           notifications.push({
-            id: 'inventory',
+            id: "inventory",
             title: `Inventario con stock bajo (${lowStockItems.length})`,
-            description: 'Revisa el modulo de inventario para reabastecer productos criticos.',
+            description:
+              "Revisa el modulo de inventario para reabastecer productos criticos.",
             createdAt: new Date(latestInventoryTs).toISOString(),
             count: lowStockItems.length,
-            route: '/inventory',
+            route: "/inventory",
             signature: inventorySignature,
           });
         }
       }
 
       const tasks = (tasksRes.data || []) as Task[];
-      const pendingTasks = tasks.filter((task) => task.status === 'PENDING');
+      const pendingTasks = tasks.filter(
+        (task) => task.status === "PENDING" || task.status === "PENDIENTE"
+      );
       const latestTaskTs = pendingTasks.reduce((max, task) => {
         const timestamp = getTimestamp(task.updatedAt || task.createdAt);
         return timestamp > max ? timestamp : max;
       }, 0);
 
       if (pendingTasks.length > 0 && latestTaskTs > 0) {
-        const seenTasks = readSeen('tasks');
+        const seenTasks = readSeen("tasks");
         if (latestTaskTs > seenTasks.time) {
           notifications.push({
-            id: 'tasks',
-            title: `Tienes ${pendingTasks.length} tarea${pendingTasks.length === 1 ? '' : 's'} pendiente${pendingTasks.length === 1 ? '' : 's'}`,
-            description: 'Revisa el modulo de tareas para administrarlas.',
+            id: "tasks",
+            title: `Tienes ${pendingTasks.length} tarea${
+              pendingTasks.length === 1 ? "" : "s"
+            } pendiente${pendingTasks.length === 1 ? "" : "s"}`,
+            description: "Revisa el modulo de tareas para administrarlas.",
             createdAt: new Date(latestTaskTs).toISOString(),
             count: pendingTasks.length,
-            route: '/tasks-admin',
+            route: "/tasks-admin",
           });
         }
       }
 
       const contacts = contactsRes as Contact[];
-      const seenMessages = readSeen('messages');
+      const seenMessages = readSeen("messages");
       let latestMessageTs = 0;
 
       const conversationsWithNew = contacts.filter((contact) => {
@@ -213,12 +245,13 @@ export function NotificationBell() {
 
       if (conversationsWithNew.length > 0 && latestMessageTs > 0) {
         notifications.push({
-          id: 'messages',
+          id: "messages",
           title: `Tienes mensajes pendientes (${conversationsWithNew.length})`,
-          description: 'Visita la bandeja de mensajes para responder a tu equipo.',
+          description:
+            "Visita la bandeja de mensajes para responder a tu equipo.",
           createdAt: new Date(latestMessageTs).toISOString(),
           count: conversationsWithNew.length,
-          route: '/messages',
+          route: "/messages",
         });
       }
 
@@ -229,7 +262,7 @@ export function NotificationBell() {
         setItems([]);
       }
     } catch (err) {
-      setError('No se pudieron cargar las notificaciones.');
+      setError("No se pudieron cargar las notificaciones.");
       setItems([]);
       setPendingCount(0);
     } finally {
@@ -244,13 +277,13 @@ export function NotificationBell() {
   useEffect(() => {
     if (!socket) return;
     const refresh = () => loadNotifications();
-    socket.on('task:created', refresh);
-    socket.on('task:updated', refresh);
-    socket.on('message:created', refresh);
+    socket.on("task:created", refresh);
+    socket.on("task:updated", refresh);
+    socket.on("message:created", refresh);
     return () => {
-      socket.off('task:created', refresh);
-      socket.off('task:updated', refresh);
-      socket.off('message:created', refresh);
+      socket.off("task:created", refresh);
+      socket.off("task:updated", refresh);
+      socket.off("message:created", refresh);
     };
   }, [socket, loadNotifications]);
 
@@ -301,7 +334,9 @@ export function NotificationBell() {
             transition={{ duration: 0.18 }}
           >
             <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-              <span className="text-sm font-semibold text-emerald-700">Panel de notificaciones</span>
+              <span className="text-sm font-semibold text-emerald-700">
+                Panel de notificaciones
+              </span>
               <button
                 type="button"
                 onClick={loadNotifications}
@@ -311,10 +346,18 @@ export function NotificationBell() {
               </button>
             </div>
             <div className="max-h-72 overflow-y-auto p-4">
-              {loading && <div className="py-6 text-xs text-slate-400">Cargando avisos...</div>}
-              {!loading && error && <div className="py-6 text-xs text-rose-500">{error}</div>}
+              {loading && (
+                <div className="py-6 text-xs text-slate-400">
+                  Cargando avisos...
+                </div>
+              )}
+              {!loading && error && (
+                <div className="py-6 text-xs text-rose-500">{error}</div>
+              )}
               {!loading && !error && pendingCount === 0 && (
-                <div className="py-6 text-xs text-slate-400">Todo en orden, sin novedades recientes.</div>
+                <div className="py-6 text-xs text-slate-400">
+                  Todo en orden, sin novedades recientes.
+                </div>
               )}
               {!loading && !error && items.length > 0 && (
                 <ul className="space-y-3">
@@ -326,11 +369,19 @@ export function NotificationBell() {
                         className="block rounded-2xl border border-slate-100 px-4 py-3 shadow-sm transition hover:scale-[1.01] hover:bg-emerald-50/70"
                       >
                         <div className="flex items-center justify-between">
-                          <p className="text-sm font-semibold text-slate-800">{item.title}</p>
-                          <span className="rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">{item.count}</span>
+                          <p className="text-sm font-semibold text-slate-800">
+                            {item.title}
+                          </p>
+                          <span className="rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                            {item.count}
+                          </span>
                         </div>
-                        <p className="mt-1 text-xs text-slate-500">{item.description}</p>
-                        <div className="mt-2 text-[10px] text-slate-400">{new Date(item.createdAt).toLocaleString()}</div>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {item.description}
+                        </p>
+                        <div className="mt-2 text-[10px] text-slate-400">
+                          {new Date(item.createdAt).toLocaleString()}
+                        </div>
                       </Link>
                     </li>
                   ))}
@@ -338,10 +389,16 @@ export function NotificationBell() {
               )}
             </div>
             <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-4 py-3 text-xs font-semibold text-emerald-700">
-              <Link to="/tasks-admin" className="transition hover:text-emerald-900">
+              <Link
+                to="/tasks-admin"
+                className="transition hover:text-emerald-900"
+              >
                 Gestion de tareas
               </Link>
-              <Link to="/messages" className="transition hover:text-emerald-900">
+              <Link
+                to="/messages"
+                className="transition hover:text-emerald-900"
+              >
                 Mensajes
               </Link>
             </div>
@@ -358,7 +415,9 @@ export default function AdminShell({ children }: PropsWithChildren) {
 
   const linkCls = ({ isActive }: any) =>
     `group flex items-center gap-3 rounded-xl px-3 py-2 transition ${
-      isActive ? 'bg-white/10 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'
+      isActive
+        ? "bg-white/10 text-white"
+        : "text-white/70 hover:bg-white/10 hover:text-white"
     }`;
 
   return (
@@ -371,11 +430,13 @@ export default function AdminShell({ children }: PropsWithChildren) {
           transition={{ duration: 0.8 }}
           style={{
             background:
-              'radial-gradient(circle at top, rgba(46,204,113,0.25), transparent 60%), radial-gradient(circle at bottom right, rgba(46,204,113,0.2), transparent 55%)',
+              "radial-gradient(circle at top, rgba(46,204,113,0.25), transparent 60%), radial-gradient(circle at bottom right, rgba(46,204,113,0.2), transparent 55%)",
           }}
         />
         <div className="relative z-10 mb-4 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 font-semibold shadow-lg">IP</div>
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 font-semibold shadow-lg">
+            IP
+          </div>
           <div className="min-w-0 flex-1">
             <p className="font-semibold tracking-wide">InternetPerla</p>
             <p className="text-xs text-white/60">Control centralizado</p>
@@ -384,7 +445,7 @@ export default function AdminShell({ children }: PropsWithChildren) {
         </div>
         <nav className="relative z-10 flex flex-1 flex-col gap-1">
           {navItems.map(({ to, label, icon: Icon }) => (
-            <NavLink key={to} to={to} className={linkCls} end={to === '/'}>
+            <NavLink key={to} to={to} className={linkCls} end={to === "/"}>
               <motion.span
                 className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/5 transition group-hover:bg-white/10"
                 whileHover={{ scale: 1.05 }}
@@ -401,7 +462,7 @@ export default function AdminShell({ children }: PropsWithChildren) {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
             className="flex items-center gap-3 rounded-xl px-3 py-2 text-white/80 transition hover:bg-white/10 hover:text-white"
-            onClick={() => nav('/admin-settings')}
+            onClick={() => nav("/admin-settings")}
           >
             <span className="rounded-lg bg-white/10 p-2">
               <Settings size={16} />
@@ -423,7 +484,9 @@ export default function AdminShell({ children }: PropsWithChildren) {
         </div>
       </aside>
       <div className="flex flex-1 flex-col overflow-hidden">
-        <header className="brand-gradient sticky top-0 z-10 px-4 py-3 text-white shadow md:hidden">Internet Perla</header>
+        <header className="brand-gradient sticky top-0 z-10 px-4 py-3 text-white shadow md:hidden">
+          Internet Perla
+        </header>
         <motion.main
           className="flex-1 overflow-y-auto p-4 lg:p-6"
           initial={{ opacity: 0, y: 8 }}

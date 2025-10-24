@@ -1,169 +1,612 @@
-import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { toast } from 'sonner';
-import { ClipboardList, User, Type, FileText, PlusCircle, Paperclip } from 'lucide-react';
+import { motion } from "framer-motion";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { useSocket } from "../hooks/useSocket";
+import api from "../services/api";
+import { getCustomers } from "../services/customers";
+import {
+  createTask,
+  deleteTask,
+  listTasks,
+  updateTask,
+  type Task,
+  type TaskStatus,
+} from "../services/tasks";
 
-import api, { getApiOrigin } from '../services/api';
-import { useSocket } from '../hooks/useSocket';
+type User = {
+  id: string;
+  email: string;
+  name?: string;
+  role: "ADMIN" | "USER";
+};
+type Customer = {
+  id: string;
+  nombreCompleto: string;
+  direccion?: string;
+  telefono?: string;
+  ipAsignada?: string;
+  latitud?: string | null;
+  longitud?: string | null;
+};
 
-type User = { id:string; email:string; name?:string; role:'ADMIN'|'USER' };
-type Task = { id:string; title:string; description:string; status:'PENDING'|'COMPLETED'; assignedTo:User; createdAt:string; proofUrl?:string };
+const statusColors: Record<TaskStatus, string> = {
+  PENDIENTE: "bg-gray-200 text-gray-700",
+  EN_PROCESO: "bg-amber-100 text-amber-700",
+  COMPLETADA: "bg-emerald-100 text-emerald-700",
+  OBJETADA: "bg-rose-100 text-rose-700",
+};
 
-const glassCard = 'backdrop-blur-xl bg-white/80 shadow-xl shadow-emerald-100/60 border border-white/30';
-
-export default function TasksAdmin(){
-  const [users,setUsers] = useState<User[]>([]);
-  const [tasks,setTasks] = useState<Task[]>([]);
-  const [form,setForm] = useState({ userId:'', title:'', description:'' });
-
-  const load = async ()=>{
-    try {
-      const [u,t] = await Promise.all([
-        api.get('/users'),
-        api.get('/tasks')
-      ]);
-      setUsers(u.data.value || u.data);
-      setTasks(t.data);
-    } catch (err) {
-      toast.error('No se pudieron cargar los datos.');
-    }
-  };
+export default function TasksAdmin() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [reassignFor, setReassignFor] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [selectedCustomer, setSelectedCustomer] = useState<
+    Customer | undefined
+  >();
+  const [form, setForm] = useState({
+    assignedToId: "",
+    title: "",
+    description: "",
+  });
+  const [telefonoContacto, setTelefonoContacto] = useState("");
+  const [filterStatus, setFilterStatus] = useState<TaskStatus | "">("");
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
 
   const { socket } = useSocket();
-  useEffect(()=>{ load(); },[]);
 
-  useEffect(()=>{
+  const load = async () => {
+    const [u, t] = await Promise.all([
+      api.get("/users"),
+      listTasks(filterStatus ? { status: filterStatus } : undefined),
+    ]);
+    setUsers(u.data.value || u.data);
+    setTasks(t as Task[]);
+  };
+  // Load customers when drawer opens to ensure token is present and reduce load
+  useEffect(() => {
+    if (!open) return;
+    getCustomers()
+      .then((data) => setCustomers(data as Customer[]))
+      .catch(() => setCustomers([]));
+  }, [open]);
+
+  useEffect(() => {
+    load(); // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterStatus]);
+
+  useEffect(() => {
     if (!socket) return;
-    const refresh = ()=> load();
-    socket.on('task:created', refresh);
-    socket.on('task:updated', refresh);
-    return ()=>{ socket.off('task:created', refresh); socket.off('task:updated', refresh); };
-  },[socket]);
+    const refresh = () => load();
+    socket.on("task:created", refresh);
+    socket.on("task:updated", refresh);
+    socket.on("tasks:update", refresh);
+    return () => {
+      socket.off("task:created", refresh);
+      socket.off("task:updated", refresh);
+      socket.off("tasks:update", refresh);
+    };
+  }, [socket]);
 
-  const create = async ()=>{ 
-    if(!form.userId||!form.title) {
-      toast.warning('Selecciona un trabajador y escribe un título.');
-      return;
-    } 
+  const workerUsers = useMemo(
+    () => users.filter((u) => u.role === "USER"),
+    [users]
+  );
+  const filteredCustomers = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return customers.slice(0, 50);
+    return customers
+      .filter(
+        (c) =>
+          (c.nombreCompleto || "").toLowerCase().includes(term) ||
+          (c.direccion || "").toLowerCase().includes(term)
+      )
+      .slice(0, 50);
+  }, [customers, search]);
+
+  const onCreate = async () => {
+    if (!selectedCustomer) return toast.error("Selecciona un cliente");
+    if (!form.assignedToId) return toast.error("Selecciona un trabajador");
+    if (!form.title.trim()) return toast.error("Titulo requerido");
+    if (!telefonoContacto.trim())
+      return toast.error("El teléfono de contacto es obligatorio");
+    await createTask({
+      title: form.title,
+      description: form.description || undefined,
+      customerId: selectedCustomer.id,
+      assignedToId: form.assignedToId,
+      telefonoContacto: telefonoContacto.trim(),
+    });
+    toast.success("Tarea creada");
+    setOpen(false);
+    setSearch("");
+    setSelectedCustomer(undefined);
+    setForm({ assignedToId: "", title: "", description: "" });
+    setTelefonoContacto("");
+    await load();
+  };
+
+  const onChangeStatus = async (id: string, next: TaskStatus) => {
+    const prev = tasks.slice();
+    setTasks((curr) =>
+      curr.map((t) => (t.id === id ? { ...t, status: next } : t))
+    );
     try {
-      await api.post('/tasks', form); 
-      setForm({ userId:'', title:'', description:'' }); 
-      toast.success('Tarea creada exitosamente'); 
-      load(); 
-    } catch (err) {
-      toast.error('No se pudo crear la tarea.');
+      await updateTask(id, { status: next });
+    } catch {
+      setTasks(prev);
+    }
+  };
+  const onEdit = (t: Task) => {
+    setEditingTaskId(t.id);
+    setSelectedCustomer((t as any).customer);
+    setForm({
+      assignedToId: (t.assignedTo as any)?.id || "",
+      title: t.title,
+      description: t.description || "",
+    });
+    setTelefonoContacto(((t as any).telefonoContacto as string) || "");
+    setOpen(true);
+  };
+
+  const onUpdate = async () => {
+    if (!editingTaskId) return;
+    try {
+      await updateTask(editingTaskId, {
+        description: form.description || undefined,
+        assignedToId: form.assignedToId || undefined,
+        telefonoContacto: telefonoContacto.trim() || undefined,
+      } as any);
+      toast.success("Tarea actualizada");
+      setOpen(false);
+      setEditingTaskId(null);
+      setSelectedCustomer(undefined);
+      setForm({ assignedToId: "", title: "", description: "" });
+      setTelefonoContacto("");
+      await load();
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || "No se pudo actualizar");
+    }
+  };
+  const onReassign = async (id: string, newUserId: string) => {
+    const prev = tasks.slice();
+    const user = users.find((u) => u.id === newUserId);
+    setTasks((curr) =>
+      curr.map((t) =>
+        t.id === id
+          ? {
+              ...t,
+              assignedTo: user
+                ? ({ id: user.id, name: user.name, email: user.email } as any)
+                : (t as any).assignedTo,
+              status: "PENDIENTE" as TaskStatus,
+              motivoObjecion: undefined,
+            }
+          : t
+      )
+    );
+    try {
+      await updateTask(id, {
+        assignedToId: newUserId,
+        status: "PENDIENTE" as TaskStatus,
+      } as any);
+      toast.success("Tarea reasignada y reiniciada a PENDIENTE");
+    } catch (e: any) {
+      setTasks(prev);
+      toast.error(
+        e?.response?.data?.message || "No se pudo reasignar la tarea"
+      );
+    } finally {
+      setReassignFor(null);
+    }
+  };
+  const onDelete = async (id: string) => {
+    const prev = tasks.slice();
+    setTasks((curr) => curr.filter((t) => t.id !== id));
+    try {
+      await deleteTask(id);
+      toast.success("Tarea eliminada");
+    } catch {
+      setTasks(prev);
     }
   };
 
   return (
-    <div className="relative flex min-h-screen flex-col overflow-hidden px-3 py-6 sm:px-6 lg:px-10">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.25),_transparent_55%),_radial-gradient(circle_at_bottom_right,_rgba(14,165,233,0.25),_transparent_60%)]" />
-      <div className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 w-[140%] bg-[conic-gradient(from_180deg_at_50%_50%,rgba(16,185,129,0.12),rgba(14,165,233,0.08),rgba(16,185,129,0.12))] blur-3xl opacity-35" />
-
-      <div className="relative z-10 flex flex-1 flex-col gap-8 overflow-hidden">
-        <header>
-          <motion.h1
-            className="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl"
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            Administración de Tareas
-          </motion.h1>
-          <motion.p
-            className="mt-3 max-w-3xl text-sm text-slate-600 sm:text-base"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
-          >
-            Asigna nuevas tareas a los colaboradores y supervisa el progreso y las evidencias de trabajo.
-          </motion.p>
-        </header>
-
-        <motion.section 
-          className={`${glassCard} rounded-3xl p-6`} 
-          initial={{ opacity: 0, y: 20 }} 
-          animate={{ opacity: 1, y: 0 }} 
-          transition={{ duration: 0.5, delay: 0.2 }}
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <motion.h1
+          className="text-2xl font-bold text-primary"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
         >
-          <h2 className="text-lg font-semibold text-slate-900 mb-4">Asignar Nueva Tarea</h2>
-          <div className="grid md:grid-cols-4 gap-4 items-center">
-            <div className="relative">
-                <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-400" />
-                <select className="w-full appearance-none rounded-full border border-emerald-200/70 bg-white px-9 py-2 text-sm shadow-inner focus:border-emerald-400 focus:outline-none" value={form.userId} onChange={e=>setForm({...form,userId:e.target.value})}>
-                    <option value="">Selecciona trabajador</option>
-                    {users.filter(u=>u.role==='USER').map(u=> <option key={u.id} value={u.id}>{u.name||u.email}</option>)}
-                </select>
-            </div>
-            <div className="relative">
-                <Type className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-400" />
-                <input className="w-full rounded-full border border-emerald-200/70 bg-white px-9 py-2 text-sm shadow-inner focus:border-emerald-400 focus:outline-none" placeholder="Título de la tarea" value={form.title} onChange={e=>setForm({...form,title:e.target.value})} />
-            </div>
-            <div className="relative">
-                <FileText className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-400" />
-                <input className="w-full rounded-full border border-emerald-200/70 bg-white px-9 py-2 text-sm shadow-inner focus:border-emerald-400 focus:outline-none" placeholder="Descripción (opcional)" value={form.description} onChange={e=>setForm({...form,description:e.target.value})} />
-            </div>
-            <button onClick={create} className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-200 transition hover:bg-emerald-600">
-              <PlusCircle className="h-4 w-4" />
-              Crear Tarea
-            </button>
-          </div>
-        </motion.section>
-
-        <motion.section 
-          className={`${glassCard} flex-1 rounded-3xl p-6`} 
-          initial={{ opacity: 0, y: 20 }} 
-          animate={{ opacity: 1, y: 0 }} 
-          transition={{ duration: 0.5, delay: 0.4 }}
-        >
-          <div className="flex items-center gap-3 mb-4">
-            <ClipboardList className="h-6 w-6 text-emerald-600" />
-            <h2 className="text-xl font-bold text-slate-900">Historial de Tareas</h2>
-          </div>
-          <div className="overflow-y-auto custom-scrollbar max-h-[60vh]">
-            <ul className="space-y-4 pr-2">
-              {tasks.map((t,i)=> (
-                <motion.li 
-                  key={t.id} 
-                  className="bg-white/70 p-4 rounded-2xl border border-white/50 shadow-sm"
-                  initial={{opacity:0,y:6}}
-                  animate={{opacity:1,y:0}}
-                  transition={{delay:i*0.03}}
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-semibold text-slate-800">{t.title}</p>
-                      <p className="text-sm text-slate-600 mt-1">{t.description}</p>
-                    </div>
-                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${t.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                      {t.status === 'COMPLETED' ? 'Completada' : 'Pendiente'}
-                    </span>
-                  </div>
-                  <div className="mt-3 pt-3 border-t border-emerald-100/80 flex justify-between items-center">
-                    <div className="text-xs text-slate-500">
-                      Asignado a: <span className="font-medium text-slate-600">{t.assignedTo?.name||t.assignedTo?.email}</span> • {new Date(t.createdAt).toLocaleString()}
-                    </div>
-                    {t.proofUrl && 
-                      <div>
-                        <a 
-                          className="inline-flex items-center gap-2 rounded-full border border-emerald-200/70 bg-white px-3 py-1 text-xs font-semibold text-emerald-700 shadow-sm hover:bg-emerald-50"
-                          href={`${getApiOrigin()}${t.proofUrl}`} 
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <Paperclip className="h-3 w-3" />
-                          Ver evidencia
-                        </a>
-                      </div>
-                    }
-                  </div>
-                </motion.li>
-              ))}
-              {tasks.length===0 && <li className="text-center text-slate-500 py-8">No hay tareas registradas.</li>}
-            </ul>
-          </div>
-        </motion.section>
+          Tareas (Admin)
+        </motion.h1>
+        <div className="flex gap-2">
+          <select
+            className="border rounded px-2 py-1"
+            value={filterStatus}
+            onChange={(e) => setFilterStatus((e.target.value || "") as any)}
+          >
+            <option value="">Todos</option>
+            <option value="PENDIENTE">Pendiente</option>
+            <option value="EN_PROCESO">En proceso</option>
+            <option value="COMPLETADA">Completada</option>
+            <option value="OBJETADA">Objetada</option>
+          </select>
+          <button
+            onClick={() => setOpen(true)}
+            className="bg-primary text-white rounded px-3 py-1"
+          >
+            ➕ Agregar tarea
+          </button>
+        </div>
       </div>
+
+      <div className="bg-white rounded shadow p-0 animate-fadeIn overflow-auto">
+        <table className="min-w-full text-sm">
+          <thead>
+            <tr className="bg-slate-50 text-left">
+              <th className="p-3">Cliente</th>
+              <th className="p-3">Dirección</th>
+              <th className="p-3">Asignado a</th>
+              <th className="p-3">Estado</th>
+              <th className="p-3">Comentario</th>
+              <th className="p-3">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tasks.map((t, i) => (
+              <>
+                <motion.tr
+                  key={t.id}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.02 }}
+                  className={`border-t ${
+                    t.status === "COMPLETADA"
+                      ? "bg-green-50 border-green-200 opacity-75"
+                      : t.status === "OBJETADA"
+                      ? "bg-red-50 border-red-200"
+                      : ""
+                  }`}
+                >
+                  <td className="p-3">
+                    <div className="font-medium flex items-center gap-2">
+                      {(t.customer as any)?.nombreCompleto || "-"}
+                      {t.status === "OBJETADA" && (
+                        <span className="inline-flex items-center rounded px-1.5 py-0.5 bg-rose-600 text-white text-[10px] font-semibold">
+                          OBJETADA
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-slate-500">{t.title}</div>
+                  </td>
+                  <td className="p-3 text-slate-600">
+                    {(t.customer as any)?.direccion || "-"}
+                  </td>
+                  <td className="p-3 relative">
+                    <div className="flex items-center gap-2">
+                      <span>{t.assignedTo?.name || t.assignedTo?.email}</span>
+                      <button
+                        className="text-xs text-primary underline"
+                        onClick={() =>
+                          setReassignFor(reassignFor === t.id ? null : t.id)
+                        }
+                      >
+                        Reasignar
+                      </button>
+                    </div>
+                    {reassignFor === t.id && (
+                      <div className="absolute z-10 mt-2 w-56 bg-white border rounded shadow p-2">
+                        <div className="text-[11px] text-slate-500 mb-1">
+                          Selecciona trabajador
+                        </div>
+                        <select
+                          className="w-full border rounded px-2 py-1 text-sm"
+                          defaultValue=""
+                          onChange={(e) =>
+                            e.target.value && onReassign(t.id, e.target.value)
+                          }
+                        >
+                          <option value="" disabled>
+                            Elegir…
+                          </option>
+                          {workerUsers.map((u) => (
+                            <option key={u.id} value={u.id}>
+                              {u.name || u.email}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </td>
+                  <td className="p-3">
+                    <span
+                      className={`inline-flex items-center gap-2 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                        statusColors[t.status]
+                      }`}
+                    >
+                      {t.status.replace("_", " ")}
+                    </span>
+                    <div className="mt-1">
+                      <select
+                        className="border rounded px-2 py-1 text-xs"
+                        value={t.status}
+                        disabled={
+                          t.status === "COMPLETADA" || t.status === "OBJETADA"
+                        }
+                        onChange={(e) =>
+                          onChangeStatus(t.id, e.target.value as TaskStatus)
+                        }
+                      >
+                        <option value="PENDIENTE">Pendiente</option>
+                        <option value="EN_PROCESO">En proceso</option>
+                        <option value="COMPLETADA">Completada</option>
+                      </select>
+                    </div>
+                  </td>
+                  <td
+                    className="p-3 text-xs text-slate-600 max-w-xs truncate"
+                    title={
+                      (t.status === "COMPLETADA"
+                        ? t.comentarioFinal
+                        : t.motivoObjecion) || ""
+                    }
+                  >
+                    {t.status === "COMPLETADA"
+                      ? t.comentarioFinal
+                        ? t.comentarioFinal.length > 80
+                          ? t.comentarioFinal.slice(0, 80) + "…"
+                          : t.comentarioFinal
+                        : "-"
+                      : t.motivoObjecion
+                      ? t.motivoObjecion.length > 80
+                        ? t.motivoObjecion.slice(0, 80) + "…"
+                        : t.motivoObjecion
+                      : "-"}
+                  </td>
+                  <td className="p-3">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() =>
+                          setExpanded((prev) => ({
+                            ...prev,
+                            [t.id]: !prev[t.id],
+                          }))
+                        }
+                        className="text-primary hover:underline text-xs"
+                      >
+                        {expanded[t.id] ? "Ocultar" : "Ver más..."}
+                      </button>
+                      <button
+                        onClick={() => onEdit(t)}
+                        className="text-primary hover:underline text-xs"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        onClick={() => onDelete(t.id)}
+                        className="text-rose-600 hover:underline text-xs"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </td>
+                </motion.tr>
+                {expanded[t.id] && (
+                  <tr className="border-t bg-slate-50/50">
+                    <td className="p-3 text-slate-700" colSpan={6}>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                        <div>
+                          <div className="text-[11px] text-slate-500">
+                            Teléfono
+                          </div>
+                          <div className="font-medium">
+                            {(t.customer as any)?.telefono ?? "—"}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-[11px] text-slate-500">
+                            Teléfono contacto
+                          </div>
+                          <div className="font-medium">
+                            {(t as any)?.telefonoContacto ?? "—"}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-[11px] text-slate-500">IP</div>
+                          <div className="font-medium">
+                            {(t.customer as any)?.ipAsignada ?? "—"}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-[11px] text-slate-500">
+                            Latitud
+                          </div>
+                          <div className="font-medium">
+                            {(t.customer as any)?.latitud ?? "—"}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-[11px] text-slate-500">
+                            Longitud
+                          </div>
+                          <div className="font-medium">
+                            {(t.customer as any)?.longitud ?? "—"}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </>
+            ))}
+            {tasks.length === 0 && (
+              <tr>
+                <td className="p-4 text-slate-500" colSpan={6}>
+                  Sin tareas
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Drawer */}
+      {open && (
+        <div className="fixed inset-0 z-40">
+          <div
+            className="absolute inset-0 bg-black/20"
+            onClick={() => setOpen(false)}
+          />
+          <motion.div
+            initial={{ x: 400, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: 400, opacity: 0 }}
+            className="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-xl p-6 overflow-y-auto"
+          >
+            <h2 className="text-lg font-semibold mb-4">
+              {editingTaskId ? "Editar tarea" : "Agregar tarea"}
+            </h2>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-slate-500">Buscar cliente</label>
+                <input
+                  className="w-full border rounded px-2 py-1"
+                  placeholder="Nombre o dirección"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+                <div className="max-h-40 overflow-y-auto mt-2 border rounded">
+                  {filteredCustomers.map((c) => (
+                    <button
+                      key={c.id}
+                      className={`block w-full text-left px-2 py-1 text-sm hover:bg-slate-50 ${
+                        selectedCustomer?.id === c.id ? "bg-emerald-50" : ""
+                      }`}
+                      onClick={() => !editingTaskId && setSelectedCustomer(c)}
+                      disabled={!!editingTaskId}
+                    >
+                      {c.nombreCompleto}{" "}
+                      <span className="text-xs text-slate-500">
+                        — {c.direccion || "-"}
+                      </span>
+                    </button>
+                  ))}
+                  {filteredCustomers.length === 0 && (
+                    <div className="p-2 text-xs text-slate-500">
+                      Sin resultados
+                    </div>
+                  )}
+                </div>
+              </div>
+              {selectedCustomer && (
+                <div className="rounded border p-2 text-xs text-slate-600">
+                  <div>
+                    <span className="font-semibold">Dirección:</span>{" "}
+                    {selectedCustomer.direccion || "-"}
+                  </div>
+                  <div>
+                    <span className="font-semibold">Teléfono:</span>{" "}
+                    {selectedCustomer.telefono || "-"}
+                  </div>
+                  <div>
+                    <span className="font-semibold">IP asignada:</span>{" "}
+                    {selectedCustomer.ipAsignada ?? "-"}
+                  </div>
+                  <div className="hidden sm:block">
+                    <span className="font-semibold">Latitud:</span>{" "}
+                    {selectedCustomer.latitud ?? "-"}
+                  </div>
+                  <div className="hidden sm:block">
+                    <span className="font-semibold">Longitud:</span>{" "}
+                    {selectedCustomer.longitud ?? "-"}
+                  </div>
+                </div>
+              )}
+              <div>
+                <label className="text-xs text-slate-500">
+                  Asignar trabajador
+                </label>
+                <select
+                  className="w-full border rounded px-2 py-1"
+                  value={form.assignedToId}
+                  onChange={(e) =>
+                    setForm({ ...form, assignedToId: e.target.value })
+                  }
+                >
+                  <option value="">Selecciona trabajador</option>
+                  {workerUsers.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name || u.email}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label
+                  className="text-xs text-slate-500"
+                  htmlFor="telefonoContacto"
+                >
+                  Teléfono de contacto *
+                </label>
+                <input
+                  id="telefonoContacto"
+                  className="w-full border rounded px-2 py-1"
+                  placeholder="Ej. 5523456789"
+                  value={telefonoContacto}
+                  onChange={(e) => setTelefonoContacto(e.target.value)}
+                />
+                <p className="mt-1 text-[11px] text-slate-500">
+                  Es el número desde el que llamó el cliente. No edita el
+                  teléfono maestro del cliente.
+                </p>
+              </div>
+              <div>
+                <label className="text-xs text-slate-500">Título</label>
+                <input
+                  className="w-full border rounded px-2 py-1"
+                  placeholder="Ej. Revisar instalación"
+                  value={form.title}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  disabled={!!editingTaskId}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-slate-500">
+                  Descripción (opcional)
+                </label>
+                <textarea
+                  className="w-full border rounded px-2 py-1"
+                  rows={3}
+                  placeholder="Detalles adicionales"
+                  value={form.description}
+                  onChange={(e) =>
+                    setForm({ ...form, description: e.target.value })
+                  }
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  onClick={() => setOpen(false)}
+                  className="px-3 py-1 rounded border"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={editingTaskId ? onUpdate : onCreate}
+                  className="px-3 py-1 rounded bg-primary text-white"
+                >
+                  {editingTaskId ? "Guardar" : "Agregar"}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
