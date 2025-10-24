@@ -21,20 +21,18 @@ import { RepositoriesModule } from "./repositories/repositories.module";
       rootPath: join(process.cwd(), "uploads"),
       serveRoot: "/uploads",
     }),
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (cfg: ConfigService) => ({
-        type: "postgres",
-        host: cfg.get("DB_HOST"),
-        port: parseInt(cfg.get("DB_PORT") || "5432", 10),
-        username: cfg.get("DB_USERNAME"),
-        password: cfg.get("DB_PASSWORD"),
-        database: cfg.get("DB_DATABASE"),
-        synchronize: cfg.get("DB_SYNC") === "true",
-        autoLoadEntities: true,
-      }),
-    }),
+TypeOrmModule.forRootAsync({
+  imports: [ConfigModule],
+  inject: [ConfigService],
+  useFactory: (cfg: ConfigService) => ({
+    type: 'postgres',
+    url: cfg.get('DATABASE_URL'),
+    autoLoadEntities: true,
+    synchronize: cfg.get('DB_SYNC') === 'true',
+    ssl: { rejectUnauthorized: false },
+  }),
+}),
+
     AuthModule,
     RepositoriesModule,
     UsersModule,
