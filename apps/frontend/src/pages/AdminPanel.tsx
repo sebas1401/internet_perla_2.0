@@ -13,12 +13,7 @@ type Cust = { id: string };
 type Stock = { id: string; quantity: number; item: { id: string } };
 type Item = { id: string; name: string; minStock: number; updatedAt?: string; createdAt?: string };
 
-const tabs = [
-  { id: 'dashboard', label: 'Dashboard' },
-  { id: 'attendance', label: 'Asistencia' },
-  { id: 'inventory', label: 'Inventario' },
-  { id: 'finance', label: 'Finanzas' },
-];
+
 
 const glassCard = 'backdrop-blur-xl bg-white/80 shadow-xl shadow-emerald-100/60 border border-white/30';
 
@@ -114,7 +109,7 @@ const ProgressRing = ({ percent }: { percent: number }) => {
 };
 
 export default function AdminPanel() {
-  const [tab, setTab] = useState<string>('dashboard');
+
   const [att, setAtt] = useState<Att[]>([]);
   const [cust, setCust] = useState<Cust[]>([]);
   const [stocks, setStocks] = useState<Stock[]>([]);
@@ -194,9 +189,7 @@ export default function AdminPanel() {
     { label: 'Nueva comunicación', description: 'Inicia una conversación con el equipo.', to: '/messages' },
   ];
 
-  if (tab === 'attendance') return <Attendance />;
-  if (tab === 'inventory') return <Inventory />;
-  if (tab === 'finance') return <Finance />;
+
 
   return (
     <div className="relative min-h-full overflow-hidden px-3 py-4 sm:px-6 lg:px-10">
@@ -231,27 +224,7 @@ export default function AdminPanel() {
               Visualiza la salud operacional de inmediato: estado de asistencia, clientes activos, inventario y focos críticos en tiempo real.
             </motion.p>
           </div>
-          <div className="flex flex-wrap items-center gap-2 rounded-full bg-white/80 px-2 py-2 text-xs font-semibold shadow-inner shadow-emerald-100">
-            {tabs.map(({ id, label }) => (
-              <button
-                key={id}
-                onClick={() => setTab(id)}
-                className={`rounded-full px-4 py-2 transition ${
-                  tab === id
-                    ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-200'
-                    : 'text-emerald-700 hover:bg-emerald-100/70'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-            <button
-              onClick={load}
-              className="flex items-center gap-1 rounded-full bg-white px-4 py-2 text-emerald-600 shadow hover:bg-emerald-50"
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} /> Actualizar
-            </button>
-          </div>
+
         </div>
 
         <div className="grid gap-6 lg:grid-cols-4">
