@@ -121,7 +121,7 @@ export default function Customers() {
       </motion.div>
 
       <motion.div
-        className="bg-white/10 backdrop-blur-lg rounded-xl shadow-lg shadow-emerald-500/50 border border-slate-300 overflow-hidden"
+        className="bg-white/10 backdrop-blur-lg rounded-xl shadow-lg shadow-emerald-500/50 border border-slate-300 overflow-x-auto"
         variants={itemVariants}
       >
         <table className="min-w-full text-sm text-white">

@@ -8,10 +8,12 @@ import {
   Home,
   LogOut,
   Map,
+  Menu,
   MessageSquare,
   Settings,
   Users,
   Users2,
+  X,
 } from "lucide-react";
 import {
   PropsWithChildren,
@@ -412,6 +414,13 @@ export function NotificationBell() {
 export default function AdminShell({ children }: PropsWithChildren) {
   const { user, logout } = useAuth();
   const nav = useNavigate();
+  const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const handleNavLinkClick = () => {
+    if (isMobileMenuOpen) {
+      setMobileMenuOpen(false);
+    }
+  };
 
   const linkCls = ({ isActive }: any) =>
     `group flex items-center gap-3 rounded-xl px-3 py-2 transition ${
@@ -420,9 +429,104 @@ export default function AdminShell({ children }: PropsWithChildren) {
         : "text-white/70 hover:bg-white/10 hover:text-white"
     }`;
 
+  const sidebarContent = (
+    <>
+      <div className="relative z-10 mb-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 font-semibold shadow-lg">
+            IP
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold tracking-wide">InternetPerla</p>
+            <p className="text-xs text-white/60">Control centralizado</p>
+          </div>
+        </div>
+        <div className="md:hidden">
+          <button onClick={() => setMobileMenuOpen(false)} className="text-white/70 hover:text-white">
+            <X size={24} />
+          </button>
+        </div>
+        <div className="hidden md:block">
+          <NotificationBell />
+        </div>
+      </div>
+      <nav className="relative z-10 flex flex-col gap-1">
+        {navItems.map(({ to, label, icon: Icon }) => (
+          <NavLink key={to} to={to} className={linkCls} end={to === "/"} onClick={handleNavLinkClick}>
+            <motion.span
+              className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/5 transition group-hover:bg-white/10"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.96 }}
+            >
+              <Icon size={18} />
+            </motion.span>
+            <span className="font-medium">{label}</span>
+          </NavLink>
+        ))}
+      </nav>
+      <div className="relative z-10 mt-auto flex flex-col gap-2 border-t border-white/10 pt-4">
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.97 }}
+          className="flex items-center gap-3 rounded-xl px-3 py-2 text-white/80 transition hover:bg-white/10 hover:text-white"
+          onClick={() => {
+            handleNavLinkClick();
+            nav("/admin-settings");
+          }}
+        >
+          <span className="rounded-lg bg-white/10 p-2">
+            <Settings size={16} />
+          </span>
+          <span className="font-medium">Configuracion</span>
+        </motion.button>
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.97 }}
+          className="flex items-center gap-3 rounded-xl px-3 py-2 text-red-300 transition hover:bg-red-500/20 hover:text-white"
+          onClick={logout}
+        >
+          <span className="rounded-lg bg-red-500/10 p-2">
+            <LogOut size={16} />
+          </span>
+          <span className="font-medium">Salir</span>
+        </motion.button>
+        <div className="text-xs text-white/60">{user?.email}</div>
+      </div>
+    </>
+  );
+
   return (
     <div className="flex h-screen bg-gray-50">
-      <aside className="relative hidden h-full w-72 flex-shrink-0 flex-col gap-4 overflow-visible bg-[#0a2a06] p-6 text-white md:flex">
+      {/* Overlay for mobile */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            className="fixed inset-0 z-30 bg-black/30 md:hidden"
+            onClick={() => setMobileMenuOpen(false)}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Sidebar for mobile */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.aside
+            className="fixed inset-y-0 left-0 z-40 flex h-full w-72 flex-col gap-4 overflow-y-auto bg-[#0a2a06] p-6 text-white md:hidden"
+            initial={{ x: "-100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "-100%" }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          >
+            {sidebarContent}
+          </motion.aside>
+        )}
+      </AnimatePresence>
+
+      {/* Sidebar for desktop */}
+      <aside className="relative hidden h-full w-72 flex-shrink-0 flex-col gap-4 overflow-y-auto bg-[#0a2a06] p-6 text-white md:flex">
         <motion.div
           className="pointer-events-none absolute inset-0 opacity-70"
           initial={{ opacity: 0 }}
@@ -433,62 +537,21 @@ export default function AdminShell({ children }: PropsWithChildren) {
               "radial-gradient(circle at top, rgba(46,204,113,0.25), transparent 60%), radial-gradient(circle at bottom right, rgba(46,204,113,0.2), transparent 55%)",
           }}
         />
-        <div className="relative z-10 mb-4 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 font-semibold shadow-lg">
-            IP
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="font-semibold tracking-wide">InternetPerla</p>
-            <p className="text-xs text-white/60">Control centralizado</p>
-          </div>
-          <NotificationBell />
-        </div>
-        <nav className="relative z-10 flex flex-1 flex-col gap-1">
-          {navItems.map(({ to, label, icon: Icon }) => (
-            <NavLink key={to} to={to} className={linkCls} end={to === "/"}>
-              <motion.span
-                className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/5 transition group-hover:bg-white/10"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.96 }}
-              >
-                <Icon size={18} />
-              </motion.span>
-              <span className="font-medium">{label}</span>
-            </NavLink>
-          ))}
-        </nav>
-        <div className="relative z-10 mt-auto flex flex-col gap-2 border-t border-white/10 pt-4">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.97 }}
-            className="flex items-center gap-3 rounded-xl px-3 py-2 text-white/80 transition hover:bg-white/10 hover:text-white"
-            onClick={() => nav("/admin-settings")}
-          >
-            <span className="rounded-lg bg-white/10 p-2">
-              <Settings size={16} />
-            </span>
-            <span className="font-medium">Configuracion</span>
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.97 }}
-            className="flex items-center gap-3 rounded-xl px-3 py-2 text-red-300 transition hover:bg-red-500/20 hover:text-white"
-            onClick={logout}
-          >
-            <span className="rounded-lg bg-red-500/10 p-2">
-              <LogOut size={16} />
-            </span>
-            <span className="font-medium">Salir</span>
-          </motion.button>
-          <div className="text-xs text-white/60">{user?.email}</div>
-        </div>
+        {sidebarContent}
       </aside>
-      <div className="flex flex-1 flex-col overflow-visible">
-        <header className="brand-gradient sticky top-0 z-10 px-4 py-3 text-white shadow md:hidden">
-          Internet Perla
+
+      <div className="flex flex-1 flex-col overflow-y-auto">
+        <header className="sticky top-0 z-20 flex items-center justify-between bg-white px-4 py-3 shadow-sm md:hidden">
+          <span className="font-semibold">Internet Perla</span>
+          <div className="flex items-center gap-2">
+            <NotificationBell />
+            <button onClick={() => setMobileMenuOpen(true)} className="text-gray-600 hover:text-black">
+              <Menu size={24} />
+            </button>
+          </div>
         </header>
         <motion.main
-          className="flex-1 overflow-y-auto p-4 lg:p-6"
+          className="flex-1 p-4 lg:p-6"
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}

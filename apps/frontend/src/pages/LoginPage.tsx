@@ -31,9 +31,9 @@ export default function LoginPage(){
     }
   };
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-      <motion.form onSubmit={submit} className="bg-white p-6 rounded shadow w-full max-w-sm animate-fadeInUp" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}}>
-        <h1 className="text-2xl font-bold text-primary mb-4">Acceso</h1>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4 sm:p-6 md:p-8">
+      <motion.form onSubmit={submit} className="bg-white p-6 sm:p-8 rounded-lg shadow-lg w-full max-w-md" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}}>
+        <h1 className="text-2xl sm:text-3xl font-bold text-primary mb-6 text-center">Acceso</h1>
         {apiOk===false && <div className="text-red-600 mb-2">No hay conexión con la API ({import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1'})</div>}
         {error && <div className="text-red-600 mb-2">{error}</div>}
         <label className="text-sm">Correo</label>
