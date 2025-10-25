@@ -468,10 +468,10 @@ export default function AdminShell({ children }: PropsWithChildren) {
   const logoSrc = "/perla-logo.svg";
 
   const linkCls = ({ isActive }: any) =>
-    `group flex items-center gap-3 rounded-xl px-3 py-2 transition ${
+    `group relative flex items-center gap-3 rounded-xl px-3 py-2 border transition ${
       isActive
-        ? "bg-white/10 text-white"
-        : "text-white/70 hover:bg-white/10 hover:text-white"
+        ? "bg-white/10 text-white border-emerald-400/40 shadow-[0_0_0_2px_rgba(16,185,129,0.35),0_0_20px_rgba(16,185,129,0.35)]"
+        : "text-white/70 border-transparent hover:text-white hover:bg-white/10 hover:border-emerald-400/30 hover:shadow-[0_0_0_2px_rgba(16,185,129,0.25),0_0_14px_rgba(16,185,129,0.25)]"
     }`;
 
   const handleNavLinkClick = () => {

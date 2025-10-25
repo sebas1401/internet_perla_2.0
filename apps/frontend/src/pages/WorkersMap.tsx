@@ -113,7 +113,7 @@ export function WorkersMap() {
 
         <div className="grid flex-1 grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">
           <motion.div
-            className={`${collaboratorPanel} rounded-3xl p-4 flex flex-col relative overflow-hidden`}
+            className={`${collaboratorPanel} order-2 lg:order-1 rounded-3xl p-4 flex flex-col relative overflow-hidden`}
             initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.7, delay: 0.2 }}
@@ -173,11 +173,12 @@ export function WorkersMap() {
           </motion.div>
 
           <motion.div
-            className={`${glassCard} rounded-3xl overflow-hidden`}
+            className={`${glassCard} order-1 lg:order-2 rounded-3xl overflow-hidden`}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7, delay: 0.4 }}
           >
+            <div className="w-full h-[75vh] sm:h-[85vh] lg:h-[70vh] lg:min-h-[520px]">
             <Map
               ref={mapRef}
               initialViewState={{
@@ -187,6 +188,7 @@ export function WorkersMap() {
               }}
               mapStyle={mapStyle}
               mapboxAccessToken={MAPBOX_TOKEN}
+              style={{ width: '100%', height: '100%' }}
             >
               <NavigationControl position="top-left" />
               {workers
@@ -225,6 +227,7 @@ export function WorkersMap() {
                   </div>
                 ))}
             </Map>
+            </div>
           </motion.div>
         </div>
       </div>

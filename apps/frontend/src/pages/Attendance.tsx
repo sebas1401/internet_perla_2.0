@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, Filter, RefreshCw, Search, CheckCircle, User, Type, FileText } from 'lucide-react';
 import { toast } from 'sonner';
@@ -19,12 +19,58 @@ export default function Attendance() {
   const [search, setSearch] = useState('');
   const { socket } = useSocket();
 
-  const [users, setUsers] = useState<{ id: string; name: string; email: string }[]>([]);
+  const [users, setUsers] = useState<{ id: string; name: string; email: string; paymentRate?: number }[]>([]);
   const [selectedUser, setSelectedUser] = useState<string>('');
+  // Historial semanal (guardado local)
+  type WeekRecord = {
+    id: string;
+    userId: string;
+    userName: string;
+    weekStart: string;
+    weekEnd: string;
+    rate: number;
+    days: { date: string; checkIn: string; checkOut: string; payment: number }[];
+    total: number;
+    savedAt: string;
+  };
+  const [history, setHistory] = useState<WeekRecord[]>([]);
+  const [historyQuery, setHistoryQuery] = useState<string>('');
+  const HISTORY_KEY = 'attendance_week_history';
+  const readHistory = (): WeekRecord[] => {
+    try {
+      const raw = typeof window !== 'undefined' ? window.localStorage.getItem(HISTORY_KEY) : null;
+      if (!raw) return [];
+      const arr = JSON.parse(raw);
+      return Array.isArray(arr) ? (arr as WeekRecord[]) : [];
+    } catch {
+      return [];
+    }
+  };
+  const writeHistory = (arr: WeekRecord[]) => {
+    try {
+      if (typeof window !== 'undefined') window.localStorage.setItem(HISTORY_KEY, JSON.stringify(arr));
+    } catch {}
+  };
+  useEffect(() => { setHistory(readHistory()); }, []);
 
   useEffect(() => {
     api.get('/users')
-      .then(r => setUsers(r.data))
+      .then(r => {
+        const list = (r.data?.value ?? r.data) as any[];
+        // Normalizar posible nombre del campo de pago (paymentRate | payment_rate)
+        const normalized = (list || []).map((u) => ({
+          ...u,
+          paymentRate:
+            typeof u?.paymentRate !== 'undefined'
+              ? u.paymentRate
+              : typeof (u as any)?.payment_rate !== 'undefined'
+              ? (u as any).payment_rate
+              : (typeof window !== 'undefined'
+                  ? Number(window.localStorage.getItem(`paymentRate_${u.id}`) || '') || undefined
+                  : undefined),
+        }));
+        setUsers(normalized);
+      })
       .catch(() => toast.error('No se pudo cargar la lista de trabajadores.'));
   }, []);
 
@@ -191,6 +237,14 @@ export default function Attendance() {
 
           {selectedUser && (
             <div className="mt-6">
+              {(() => {
+                const sel = users.find(u => u.id === selectedUser) as any;
+                const rateRaw = sel?.paymentRate ?? 0;
+                const rate = Number(typeof rateRaw === 'string' ? parseFloat(rateRaw) : rateRaw) || 0;
+                return (
+                  <div className="mb-2 text-xs text-slate-500">Pago diario configurado: Q{rate.toFixed(2)}</div>
+                );
+              })()}
               <div className="overflow-x-auto custom-scrollbar">
                 <table className="min-w-full text-sm text-left">
                   <thead className="bg-white/60 text-xs uppercase tracking-wide text-slate-500">
@@ -198,6 +252,7 @@ export default function Attendance() {
                       <th className="px-4 py-3">Día</th>
                       <th className="px-4 py-3">Entrada</th>
                       <th className="px-4 py-3">Salida</th>
+                      <th className="px-4 py-3">Pago</th>
                       {bonusEligible && <th className="px-4 py-3">Bonificación</th>}
                     </tr>
                   </thead>
@@ -223,6 +278,15 @@ export default function Attendance() {
                             <div onClick={() => handleEditClick(day, 'checkOut')} className="cursor-pointer w-full h-full">{day.checkOut}</div>
                           )}
                         </td>
+                        <td className="px-4 py-3 text-slate-700 font-medium">
+                          {(() => {
+                            const sel = users.find(u => u.id === selectedUser) as any;
+                            const rateRaw = sel?.paymentRate ?? 0;
+                            const rate = Number(typeof rateRaw === 'string' ? parseFloat(rateRaw) : rateRaw) || 0;
+                            const worked = day.checkIn !== '---' && day.checkOut !== '---';
+                            return worked && rate > 0 ? `Q${rate.toFixed(2)}` : 'Q0.00';
+                          })()}
+                        </td>
                         {bonusEligible && (
                           <td className="px-4 py-3 text-emerald-600 font-semibold">
                             {editingCell?.date === day.date && editingCell?.field === 'bonus' ? (
@@ -237,11 +301,69 @@ export default function Attendance() {
                       </tr>
                     ))}
                     {weeklyData.length === 0 && (
-                      <tr><td colSpan={bonusEligible ? 4 : 3} className="px-4 py-6 text-center text-sm text-slate-400">No hay datos de asistencia para esta semana.</td></tr>
+                      <tr><td colSpan={bonusEligible ? 5 : 4} className="px-4 py-6 text-center text-sm text-slate-400">No hay datos de asistencia para esta semana.</td></tr>
                     )}
                   </tbody>
                 </table>
               </div>
+              {(() => {
+                const sel = users.find(u => u.id === selectedUser) as any;
+                const rateRaw = sel?.paymentRate ?? 0;
+                const rate = Number(typeof rateRaw === 'string' ? parseFloat(rateRaw) : rateRaw) || 0;
+                const daysWorked = weeklyData.filter((d: any) => d.checkIn !== '---' && d.checkOut !== '---').length;
+                const total = rate * daysWorked;
+                return (
+                  <div className="mt-3 rounded-xl border border-emerald-200/70 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                    <div className="font-semibold">Resumen semanal</div>
+                    <div>Días trabajados: {daysWorked} de 6</div>
+
+              {/* Acciones de historial */}
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  className="rounded-full bg-emerald-500 px-3 py-1.5 text-sm font-semibold text-white shadow hover:bg-emerald-600"
+                  onClick={() => {
+                    if (!selectedUser) return;
+                    const u = users.find((x) => x.id === selectedUser);
+                    if (!u) return;
+                    const rate = Number((u as any)?.paymentRate || 0) || 0;
+                    const now = new Date();
+                    const dow = now.getDay();
+                    const diffToMon = dow === 0 ? -6 : 1 - dow;
+                    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMon);
+                    start.setHours(0,0,0,0);
+                    const end = new Date(start.getTime() + 6*24*60*60*1000);
+                    const days = weeklyData.map((d: any) => ({
+                      date: d.date,
+                      checkIn: d.checkIn,
+                      checkOut: d.checkOut,
+                      payment: (d.checkIn !== "---" && d.checkOut !== "---") ? rate : 0,
+                    }));
+                    const totalSave = days.reduce((s: number, d: any) => s + d.payment, 0);
+                    const rec: any = {
+                      id: `${selectedUser}_${start.toISOString().slice(0,10)}`,
+                      userId: selectedUser,
+                      userName: (u as any).name || (u as any).email,
+                      weekStart: start.toISOString().slice(0,10),
+                      weekEnd: end.toISOString().slice(0,10),
+                      rate,
+                      days,
+                      total: totalSave,
+                      savedAt: new Date().toISOString(),
+                    };
+                    const existing: any[] = readHistory();
+                    const idxRec = existing.findIndex((x: any) => x.id === rec.id);
+                    if (idxRec >= 0) existing[idxRec] = rec; else existing.unshift(rec);
+                    writeHistory(existing);
+                    setHistory(existing);
+                  }}
+                >
+                  Guardar semana en historial
+                </button>
+              </div>
+                    <div>Total (sin bonificación): Q{total.toFixed(2)}</div>
+                  </div>
+                );
+              })()}
               {bonusEligible && (
                 <div className="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-sm text-emerald-800">
                   <p><span className="font-semibold">¡Bonificación Desbloqueada!</span> Este trabajador ha cumplido con la asistencia de la semana completa.</p>
@@ -251,7 +373,72 @@ export default function Attendance() {
           )}
         </motion.section>
 
-        {/* Tabla general de registros */}
+        {/* Historial semanal guardado localmente */}
+        <motion.section className={`${glassCard} rounded-3xl p-6`} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.35 }}>
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">Historial semanal</h2>
+              <p className="text-sm text-slate-500">Consulta semanas guardadas por fecha.</p>
+            </div>
+            <div>
+              <label className="block text-xs text-slate-500 mb-1">Buscar por fecha</label>
+              <input type="date" className="rounded border border-emerald-200/70 px-3 py-1 text-sm shadow-inner" value={historyQuery} onChange={(e) => setHistoryQuery(e.target.value)} />
+            </div>
+          </div>
+          <div className="mt-4 overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="bg-white/60 text-xs uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th className="px-3 py-2 text-left">Trabajador</th>
+                  <th className="px-3 py-2 text-left">Semana</th>
+                  <th className="px-3 py-2 text-left">Pago diario</th>
+                  <th className="px-3 py-2 text-left">Total</th>
+                  <th className="px-3 py-2 text-left">Detalle</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y bg-white/70">
+                {history.filter(h => !historyQuery || (h.weekStart <= historyQuery && historyQuery <= h.weekEnd)).map((h) => (
+                  <tr key={h.id}>
+                    <td className="px-3 py-2">{h.userName}</td>
+                    <td className="px-3 py-2">{h.weekStart} � {h.weekEnd}</td>
+                    <td className="px-3 py-2">Q{h.rate.toFixed(2)}</td>
+                    <td className="px-3 py-2">Q{h.total.toFixed(2)}</td>
+                    <td className="px-3 py-2">
+                      <details>
+                        <summary className="cursor-pointer text-emerald-700 hover:underline">Ver</summary>
+                        <div className="mt-2">
+                          <table className="min-w-[500px] text-xs">
+                            <thead>
+                              <tr className="text-slate-500">
+                                <th className="px-2 py-1 text-left">Fecha</th>
+                                <th className="px-2 py-1 text-left">Entrada</th>
+                                <th className="px-2 py-1 text-left">Salida</th>
+                                <th className="px-2 py-1 text-left">Pago</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y">
+                              {h.days.map(d => (
+                                <tr key={d.date}>
+                                  <td className="px-2 py-1">{d.date}</td>
+                                  <td className="px-2 py-1">{d.checkIn}</td>
+                                  <td className="px-2 py-1">{d.checkOut}</td>
+                                  <td className="px-2 py-1">Q{d.payment.toFixed(2)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </details>
+                    </td>
+                  </tr>
+                ))}
+                {history.length === 0 && (<tr><td className="px-3 py-4 text-center text-slate-500" colSpan={5}>A�n no hay semanas guardadas.</td></tr>)}
+              </tbody>
+            </table>
+          </div>
+        </motion.section>
+
+{/* Tabla general de registros */}
         <motion.section className={`${glassCard} flex flex-1 flex-col rounded-3xl p-6`} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.4 }}>
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
@@ -310,3 +497,6 @@ export default function Attendance() {
     </div>
   );
 }
+
+
+        

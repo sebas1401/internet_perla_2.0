@@ -245,7 +245,7 @@ export default function TasksAdmin() {
             </select>
             <button
                 onClick={() => setOpen(true)}
-                className="bg-emerald-600 text-white rounded px-3 py-1 shadow hover:bg-emerald-700"
+                className="inline-flex items-center rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-200 transition hover:bg-emerald-600"
             >
                 ➕ Agregar tarea
             </button>
@@ -453,30 +453,30 @@ export default function TasksAdmin() {
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setOpen(false)}
           />
-          <motion.div
-            initial={{ x: 400, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 400, opacity: 0 }}
-            className="absolute right-0 top-0 h-full w-full max-w-md bg-white/90 backdrop-blur-lg border-l border-slate-200 shadow-2xl p-6 overflow-y-auto text-slate-800"
-          >
-            <h2 className="text-2xl font-semibold mb-6 text-emerald-700">
-              {editingTaskId ? "Editar tarea" : "Agregar tarea"}
-            </h2>
+              <motion.div
+                initial={{ x: 400, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: 400, opacity: 0 }}
+                className="absolute right-0 top-0 h-full w-full max-w-md bg-slate-800/80 backdrop-blur-lg border-l border-slate-700 shadow-2xl shadow-emerald-500/20 p-6 overflow-y-auto text-white"
+              >
+                <h2 className="text-2xl font-semibold mb-6 text-emerald-400">
+                  {editingTaskId ? "Editar tarea" : "Agregar tarea"}
+                </h2>
             <div className="space-y-4">
               <div>
-                <label className="text-sm text-slate-600">Buscar cliente</label>
+                <label className="text-sm text-slate-400">Buscar cliente</label>
                 <input
-                  className="w-full bg-white/80 border border-slate-300 rounded-lg px-3 py-2 mt-1 text-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
+                  className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-2 mt-1 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
                   placeholder="Nombre o dirección"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
-                <div className="max-h-40 overflow-y-auto mt-2 border border-slate-200 rounded-lg bg-white/50">
+                <div className="max-h-40 overflow-y-auto mt-2 border border-slate-700 rounded-lg bg-slate-900/30">
                   {filteredCustomers.map((c) => (
                     <button
                       key={c.id}
-                      className={`block w-full text-left px-3 py-2 text-sm hover:bg-slate-100/50 transition-colors ${
-                        selectedCustomer?.id === c.id ? "bg-emerald-100/70" : ""
+                      className={`block w-full text-left px-3 py-2 text-sm text-slate-300 hover:bg-slate-800/50 transition-colors ${
+                        selectedCustomer?.id === c.id ? "bg-emerald-500/10" : ""
                       }`}
                       onClick={() => !editingTaskId && setSelectedCustomer(c)}
                       disabled={!!editingTaskId}
@@ -488,14 +488,14 @@ export default function TasksAdmin() {
                     </button>
                   ))}
                   {filteredCustomers.length === 0 && (
-                    <div className="p-3 text-sm text-slate-500 text-center">
+                    <div className="p-3 text-sm text-slate-400 text-center">
                       Sin resultados
                     </div>
                   )}
                 </div>
               </div>
               {selectedCustomer && (
-                <div className="rounded-lg border border-slate-200 p-3 text-sm text-slate-600 bg-slate-100/50 space-y-1">
+                <div className="rounded-lg border border-slate-700 p-3 text-sm text-slate-300 bg-slate-900/40 space-y-1">
                   <div>
                     <span className="font-semibold text-slate-500">Dirección:</span>{" "}
                     {selectedCustomer.direccion || "-"}
@@ -505,15 +505,15 @@ export default function TasksAdmin() {
                     {selectedCustomer.telefono || "-"}
                   </div>
                   <div>
-                    <span className="font-semibold text-slate-500">IP asignada:</span>{" "}
+                    <span className="font-semibold text-slate-400">IP asignada:</span>{" "}
                     {selectedCustomer.ipAsignada ?? "-"}
                   </div>
                 </div>
               )}
               <div>
-                <label className="text-sm text-slate-600">Asignar trabajador</label>
+                <label className="text-sm text-slate-400">Asignar trabajador</label>
                 <select
-                  className="w-full bg-white/80 border border-slate-300 rounded-lg px-3 py-2 mt-1 text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
+                  className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-2 mt-1 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
                   value={form.assignedToId}
                   onChange={(e) =>
                     setForm({ ...form, assignedToId: e.target.value })
@@ -528,10 +528,10 @@ export default function TasksAdmin() {
                 </select>
               </div>
               <div>
-                <label className="text-sm text-slate-600" htmlFor="telefonoContacto">Teléfono de contacto *</label>
+                <label className="text-sm text-slate-400" htmlFor="telefonoContacto">Teléfono de contacto *</label>
                 <input
                   id="telefonoContacto"
-                  className="w-full bg-white/80 border border-slate-300 rounded-lg px-3 py-2 mt-1 text-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
+                  className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-2 mt-1 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
                   placeholder="Ej. 5523456789"
                   value={telefonoContacto}
                   onChange={(e) => setTelefonoContacto(e.target.value)}
@@ -543,7 +543,7 @@ export default function TasksAdmin() {
               <div>
                 <label className="text-sm text-slate-600">Título</label>
                 <input
-                  className="w-full bg-white/80 border border-slate-300 rounded-lg px-3 py-2 mt-1 text-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
+                  className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-2 mt-1 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
                   placeholder="Ej. Revisar instalación"
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -553,7 +553,7 @@ export default function TasksAdmin() {
               <div>
                 <label className="text-sm text-slate-600">Descripción (opcional)</label>
                 <textarea
-                  className="w-full bg-white/80 border border-slate-300 rounded-lg px-3 py-2 mt-1 text-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
+                  className="w-full bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-2 mt-1 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
                   rows={3}
                   placeholder="Detalles adicionales"
                   value={form.description}
@@ -565,14 +565,14 @@ export default function TasksAdmin() {
               <div className="flex justify-end gap-3 pt-4">
                 <motion.button
                   onClick={() => setOpen(false)}
-                  className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm hover:bg-slate-100 transition-colors"
+                  className="px-4 py-2 rounded-lg border border-slate-600 text-slate-300 text-sm hover:bg-slate-700 transition-colors"
                   whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                 >
                   Cancelar
                 </motion.button>
                 <motion.button
                   onClick={editingTaskId ? onUpdate : onCreate}
-                  className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-500/30"
+                  className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-60 transition-all"
                   whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                 >
                   {editingTaskId ? "Guardar Cambios" : "Crear Tarea"}

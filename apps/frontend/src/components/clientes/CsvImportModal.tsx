@@ -80,13 +80,14 @@ export default function CsvImportModal({ open, onClose, onSubmit }: Props) {
             exit={{ opacity: 0 }}
             onClick={onClose}
           />
-          <motion.div
-            className="fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-slate-800/80 backdrop-blur-lg border border-slate-700 shadow-2xl shadow-emerald-500/20 text-white"
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          >
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              className="w-full max-w-lg rounded-2xl bg-slate-800/80 backdrop-blur-lg border border-slate-700 shadow-2xl shadow-emerald-500/20 text-white"
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            >
             <div className="border-b border-slate-700 p-6">
               <h3 className="text-2xl font-semibold text-emerald-400">
                 Importar clientes desde CSV
@@ -135,7 +136,8 @@ export default function CsvImportModal({ open, onClose, onSubmit }: Props) {
                     {submitting ? "Importando..." : "Importar Archivo"}
                 </motion.button>
             </div>
-          </motion.div>
+            </motion.div>
+          </div>
         </>
       )}
     </AnimatePresence>

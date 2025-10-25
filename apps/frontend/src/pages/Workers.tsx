@@ -19,6 +19,7 @@ export default function Workers() {
     name: string;
     email: string;
     password: string;
+    paymentRate?: string;
   } | null>(null);
 
   const load = async () => {
@@ -63,8 +64,17 @@ export default function Workers() {
     }
   };
 
-  const startEdit = (u: WorkerUser) =>
-    setEditing({ id: u.id, name: u.name || '', email: u.email, password: '' });
+  const startEdit = (u: WorkerUser & { paymentRate?: number }) => {
+    const stored = typeof window !== 'undefined' ? window.localStorage.getItem(`paymentRate_${u.id}`) : null;
+    const initialRate = u.paymentRate ?? (stored ? Number(stored) : undefined);
+    setEditing({
+      id: u.id,
+      name: u.name || '',
+      email: u.email,
+      password: '',
+      paymentRate: typeof initialRate === 'number' && !isNaN(initialRate) ? String(initialRate) : '',
+    });
+  };
 
   const cancelEdit = () => setEditing(null);
 
@@ -73,12 +83,22 @@ export default function Workers() {
     if (!editing.email) return toast.error('El correo es requerido');
 
     try {
-      const payload: Record<string, string> = {
+      const payload: Record<string, any> = {
         email: editing.email,
         name: editing.name,
       };
       if (editing.password) payload.password = editing.password;
+      if (editing.paymentRate && !isNaN(Number(editing.paymentRate))) payload.paymentRate = Number(editing.paymentRate);
       await api.patch(`/users/${editing.id}`, payload);
+      try {
+        if (typeof window !== 'undefined') {
+          if (payload.paymentRate !== undefined) {
+            window.localStorage.setItem(`paymentRate_${editing.id}`, String(payload.paymentRate));
+          } else if (editing.paymentRate) {
+            window.localStorage.setItem(`paymentRate_${editing.id}`, String(editing.paymentRate));
+          }
+        }
+      } catch {}
       toast.success('Trabajador actualizado');
       setEditing(null);
       load();
@@ -232,6 +252,18 @@ export default function Workers() {
                     placeholder="Nombre"
                     value={editing.name}
                     onChange={(e) => setEditing({ ...editing, name: e.target.value })}
+                  />
+                </div>
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-emerald-400 text-sm">Q</span>
+                  <input
+                    className="w-full rounded-full border border-emerald-200/70 bg-white pl-7 pr-3 py-2 text-sm shadow-inner focus:border-emerald-400 focus:outline-none"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="Pago diario (opcional)"
+                    value={editing.paymentRate || ''}
+                    onChange={(e) => setEditing({ ...editing, paymentRate: e.target.value })}
                   />
                 </div>
                 <div className="relative">

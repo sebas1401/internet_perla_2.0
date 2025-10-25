@@ -15,8 +15,8 @@ export default function Navbar() {
 
   const userRoleLinks = (isMobile: boolean) => {
     const linkClasses = isMobile
-      ? "block py-2 px-3 rounded hover:bg-white/10"
-      : "text-white/80 hover:text-white";
+      ? "block py-2 px-3 rounded-lg border border-transparent hover:bg-white/10 hover:border-emerald-400/30 hover:shadow-[0_0_0_2px_rgba(16,185,129,0.25),0_0_12px_rgba(16,185,129,0.25)] transition"
+      : "rounded-lg px-2 py-1 text-white/80 hover:text-white border border-transparent hover:border-emerald-400/30 hover:shadow-[0_0_0_2px_rgba(16,185,129,0.25),0_0_10px_rgba(16,185,129,0.25)] transition";
 
     if (user?.role === "ADMIN") {
       return (
@@ -55,7 +55,7 @@ export default function Navbar() {
           <Link to="/messages" className={linkClasses} onClick={handleLinkClick}>
             Mensajes
           </Link>
-          <Link to="/finanzas" className={linkClasses} onClick={handleLinkClick}>
+          <Link to="/finance" className={linkClasses} onClick={handleLinkClick}>
             Finanzas
           </Link>
         </>
