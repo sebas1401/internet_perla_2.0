@@ -13,31 +13,51 @@ export default function Navbar() {
   };
 
   const userRoleLinks = (isMobile: boolean) => {
-    const linkClasses = isMobile 
-      ? "block py-2 px-3 rounded hover:bg-white/10" 
+    const linkClasses = isMobile
+      ? "block py-2 px-3 rounded hover:bg-white/10"
       : "text-white/80 hover:text-white";
 
     if (user?.role === "ADMIN") {
       return (
         <>
-          <Link to="/workers" className={linkClasses} onClick={handleLinkClick}>Trabajadores</Link>
-          <Link to="/attendance" className={linkClasses} onClick={handleLinkClick}>Asistencia</Link>
-          <Link to="/inventory" className={linkClasses} onClick={handleLinkClick}>Inventario</Link>
-          <Link to="/finanzas" className={linkClasses} onClick={handleLinkClick}>Finanzas</Link>
-          <Link to="/tasks-admin" className={linkClasses} onClick={handleLinkClick}>Tareas</Link>
-          <Link to="/messages" className={linkClasses} onClick={handleLinkClick}>Mensajes</Link>
+          <Link to="/workers" className={linkClasses} onClick={handleLinkClick}>
+            Trabajadores
+          </Link>
+          <Link to="/attendance" className={linkClasses} onClick={handleLinkClick}>
+            Asistencia
+          </Link>
+          <Link to="/inventory" className={linkClasses} onClick={handleLinkClick}>
+            Inventario
+          </Link>
+          <Link to="/finanzas" className={linkClasses} onClick={handleLinkClick}>
+            Finanzas
+          </Link>
+          <Link to="/tasks-admin" className={linkClasses} onClick={handleLinkClick}>
+            Tareas
+          </Link>
+          <Link to="/messages" className={linkClasses} onClick={handleLinkClick}>
+            Mensajes
+          </Link>
         </>
       );
     }
+
     if (user?.role === "USER") {
       return (
         <>
-          <Link to="/my-tasks" className={linkClasses} onClick={handleLinkClick}>Mis Tareas</Link>
-          <Link to="/messages" className={linkClasses} onClick={handleLinkClick}>Mensajes</Link>
-          <Link to="/finanzas" className={linkClasses} onClick={handleLinkClick}>Finanzas</Link>
+          <Link to="/my-tasks" className={linkClasses} onClick={handleLinkClick}>
+            Mis Tareas
+          </Link>
+          <Link to="/messages" className={linkClasses} onClick={handleLinkClick}>
+            Mensajes
+          </Link>
+          <Link to="/finanzas" className={linkClasses} onClick={handleLinkClick}>
+            Finanzas
+          </Link>
         </>
       );
     }
+
     return null;
   };
 
@@ -48,12 +68,16 @@ export default function Navbar() {
           <Link to="/" className="font-bold hover:opacity-90 transition">
             Internet Perla
           </Link>
-          
+
           <nav className="hidden md:flex gap-4 text-sm items-center">
             {userRoleLinks(false)}
-            <Link to="/profile" className="text-white/80 hover:text-white">Perfil</Link>
+            <Link to="/profile" className="text-white/80 hover:text-white">
+              Perfil
+            </Link>
             <span className="text-white/80">{user?.email}</span>
-            <button onClick={logout} className="text-red-100 hover:text-white transition">Salir</button>
+            <button onClick={logout} className="text-red-100 hover:text-white transition">
+              Salir
+            </button>
           </nav>
 
           <div className="md:hidden">
@@ -78,7 +102,7 @@ export default function Navbar() {
 
       <AnimatePresence>
         {isOpen && (
-          <motion.nav 
+          <motion.nav
             className="fixed top-0 left-0 h-full w-4/5 max-w-sm bg-[#0a2a06] z-50 p-6 md:hidden"
             initial={{ x: "-100%" }}
             animate={{ x: 0 }}
@@ -90,7 +114,11 @@ export default function Navbar() {
                 <span className="font-bold text-lg">Menú</span>
               </div>
               {userRoleLinks(true)}
-              <Link to="/profile" className="block py-2 px-3 rounded hover:bg-white/10" onClick={handleLinkClick}>
+              <Link
+                to="/profile"
+                className="block py-2 px-3 rounded hover:bg-white/10"
+                onClick={handleLinkClick}
+              >
                 Perfil
               </Link>
               <div className="border-t pt-4 mt-auto">

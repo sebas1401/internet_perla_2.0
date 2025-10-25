@@ -25,27 +25,36 @@ import { RepositoriesModule } from "./repositories/repositories.module";
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (cfg: ConfigService) => {
-        const databaseUrl = cfg.get('DATABASE_URL');
-        if (databaseUrl) {
-          // 🔹 Modo nube (Render)
-          return {
-            type: 'postgres',
-            url: databaseUrl,
-            autoLoadEntities: true,
-            synchronize: cfg.get('DB_SYNC') === 'true',
-            ssl: { rejectUnauthorized: false },
-          };
-        }
-        // 🔹 Modo local (Docker)
-        return {
-          type: 'postgres',
-          host: cfg.get('DB_HOST') || 'localhost',
-          port: parseInt(cfg.get<string>('DB_PORT') ?? '5432', 10),
-          username: cfg.get('DB_USERNAME') || 'postgres',
-          password: cfg.get('DB_PASSWORD') || 'postgres',
-          database: cfg.get('DB_DATABASE') || 'internetperla',
+        const sslPref = `${cfg.get('DB_SSL', 'true')}`.toLowerCase();
+        const ssl = ['false', '0', 'off', 'no'].includes(sslPref)
+          ? false
+          : { rejectUnauthorized: false };
+
+        const baseOptions = {
+          type: 'postgres' as const,
           autoLoadEntities: true,
           synchronize: cfg.get('DB_SYNC') === 'true',
+          ssl,
+        };
+
+        const databaseUrl = cfg.get<string>('DATABASE_URL');
+        if (databaseUrl) {
+          return {
+            ...baseOptions,
+            url: databaseUrl,
+          };
+        }
+
+        const portValue = cfg.get<string>('DB_PORT') ?? '5432';
+        const port = Number.parseInt(portValue, 10) || 5432;
+
+        return {
+          ...baseOptions,
+          host: cfg.get<string>('DB_HOST') ?? 'localhost',
+          port,
+          username: cfg.get<string>('DB_USERNAME') ?? 'postgres',
+          password: `${cfg.get<string>('DB_PASSWORD') ?? ''}`,
+          database: cfg.get<string>('DB_DATABASE') ?? 'internetperla',
         };
       },
     }),

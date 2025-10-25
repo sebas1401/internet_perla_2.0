@@ -9,6 +9,7 @@ export class CreateItemDto {
 }
 
 export class UpdateItemDto {
+  @IsOptional() @IsString() sku?: string;
   @IsOptional() @IsString() name?: string;
   @IsOptional() @IsString() category?: string;
   @IsOptional() @IsInt() @Min(0) minStock?: number;

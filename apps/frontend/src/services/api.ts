@@ -13,7 +13,7 @@ const apiBase = (import.meta.env.VITE_API_BASE_URL as string) || undefined;
 const isViteDev =
   typeof window !== "undefined" &&
   window.location &&
-  window.location.port === "5173";
+  (window.location.port === "5173" || window.location.port === "3001");
 
 const devProxyBase = "/api/v1";
 const fallbackBase = `${window.location.protocol}//${window.location.hostname}:3000/api/v1`;
