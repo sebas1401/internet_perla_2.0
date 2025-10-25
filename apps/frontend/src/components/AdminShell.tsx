@@ -23,6 +23,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useSocket } from "../hooks/useSocket";
@@ -65,7 +66,6 @@ const getTimestamp = (value?: string) =>
   value ? new Date(value).getTime() : 0;
 
 const navItems = [
-
   { to: "/", label: "Dashboard", icon: Home },
   { to: "/attendance", label: "Asistencia", icon: Clock },
   { to: "/finance", label: "Finanzas", icon: DollarSign },
@@ -77,7 +77,6 @@ const navItems = [
   { to: "/messages", label: "Mensajes", icon: MessageSquare },
 ];
 
-
 export function NotificationBell() {
   const { user } = useAuth();
   const { socket } = useSocket();
@@ -87,10 +86,18 @@ export function NotificationBell() {
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
   const openRef = useRef(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [panelPosition, setPanelPosition] = useState({ top: 0, left: 0 });
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     openRef.current = open;
   }, [open]);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const storageBase = useMemo(
     () => (user ? `ip_admin_seen_${user.sub}` : ""),
@@ -126,7 +133,7 @@ export function NotificationBell() {
       };
       window.localStorage.setItem(key, JSON.stringify(next));
     },
-    [storageBase, readSeen]
+    [readSeen, storageBase]
   );
 
   const loadNotifications = useCallback(async () => {
@@ -289,13 +296,39 @@ export function NotificationBell() {
     };
   }, [socket, loadNotifications]);
 
+  const updatePanelPosition = useCallback(() => {
+    const trigger = triggerRef.current;
+    if (!trigger) return;
+    const rect = trigger.getBoundingClientRect();
+    const spacing = 12;
+    const top = rect.bottom + spacing;
+    const panelWidth = panelRef.current?.offsetWidth || 320;
+    const viewportLimit = window.innerWidth - panelWidth - spacing;
+    let left = rect.left - panelWidth - spacing;
+
+    if (left < spacing) {
+      left = Math.min(rect.left, viewportLimit);
+      if (left < spacing) {
+        left = spacing;
+      }
+    }
+
+    if (left > viewportLimit) {
+      left = viewportLimit;
+    }
+
+    setPanelPosition({ top: Math.max(spacing, top), left });
+  }, []);
+
   const togglePopover = () => {
     const next = !openRef.current;
     openRef.current = next;
-    setOpen(next);
     if (next) {
+      updatePanelPosition();
+      setOpen(true);
       loadNotifications();
     } else {
+      setOpen(false);
       setItems([]);
     }
   };
@@ -309,7 +342,103 @@ export function NotificationBell() {
     setItems([]);
   };
 
+  useEffect(() => {
+    if (!open) return;
+    updatePanelPosition();
+    const handle = () => updatePanelPosition();
+    window.addEventListener("resize", handle);
+    window.addEventListener("scroll", handle, true);
+    return () => {
+      window.removeEventListener("resize", handle);
+      window.removeEventListener("scroll", handle, true);
+    };
+  }, [open, updatePanelPosition]);
+
   if (!user) return null;
+
+  const panelContent = (
+    <AnimatePresence>
+      {open ? (
+        <motion.div
+          key="admin-notifications-panel"
+          className="fixed z-[99999] w-80 overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-xl"
+          ref={panelRef}
+          style={{ top: panelPosition.top, left: panelPosition.left }}
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.18 }}
+        >
+          <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+            <span className="text-sm font-semibold text-emerald-700">
+              Panel de notificaciones
+            </span>
+            <button
+              type="button"
+              onClick={loadNotifications}
+              className="text-xs text-emerald-600 transition hover:text-emerald-700"
+            >
+              Actualizar
+            </button>
+          </div>
+          <div className="max-h-72 overflow-y-auto p-4">
+            {loading && (
+              <div className="py-6 text-xs text-slate-400">
+                Cargando avisos...
+              </div>
+            )}
+            {!loading && error && (
+              <div className="py-6 text-xs text-rose-500">{error}</div>
+            )}
+            {!loading && !error && pendingCount === 0 && (
+              <div className="py-6 text-xs text-slate-400">
+                Todo en orden, sin novedades recientes.
+              </div>
+            )}
+            {!loading && !error && items.length > 0 && (
+              <ul className="space-y-3">
+                {items.map((item) => (
+                  <li key={item.id}>
+                    <Link
+                      to={item.route}
+                      onClick={() => handleAccess(item)}
+                      className="block rounded-2xl border border-slate-100 px-4 py-3 shadow-sm transition hover:scale-[1.01] hover:bg-emerald-50/70"
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-semibold text-slate-800">
+                          {item.title}
+                        </p>
+                        <span className="rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                          {item.count}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {item.description}
+                      </p>
+                      <div className="mt-2 text-[10px] text-slate-400">
+                        {new Date(item.createdAt).toLocaleString()}
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-4 py-3 text-xs font-semibold text-emerald-700">
+            <Link
+              to="/tasks-admin"
+              className="transition hover:text-emerald-900"
+            >
+              Gestion de tareas
+            </Link>
+            <Link to="/messages" className="transition hover:text-emerald-900">
+              Mensajes
+            </Link>
+          </div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
+  );
 
   return (
     <div className="relative z-[9999]">
@@ -317,6 +446,7 @@ export function NotificationBell() {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.96 }}
         onClick={togglePopover}
+        ref={triggerRef}
         className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 text-white/80 transition hover:bg-white/20 hover:text-white"
       >
         <Bell size={18} />
@@ -326,87 +456,7 @@ export function NotificationBell() {
           </span>
         )}
       </motion.button>
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            className="absolute left-1/2 z-[99999] mt-4 w-80 -translate-x-1/2 overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-xl"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.18 }}
-          >
-            <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-              <span className="text-sm font-semibold text-emerald-700">
-                Panel de notificaciones
-              </span>
-              <button
-                type="button"
-                onClick={loadNotifications}
-                className="text-xs text-emerald-600 transition hover:text-emerald-700"
-              >
-                Actualizar
-              </button>
-            </div>
-            <div className="max-h-72 overflow-y-auto p-4">
-              {loading && (
-                <div className="py-6 text-xs text-slate-400">
-                  Cargando avisos...
-                </div>
-              )}
-              {!loading && error && (
-                <div className="py-6 text-xs text-rose-500">{error}</div>
-              )}
-              {!loading && !error && pendingCount === 0 && (
-                <div className="py-6 text-xs text-slate-400">
-                  Todo en orden, sin novedades recientes.
-                </div>
-              )}
-              {!loading && !error && items.length > 0 && (
-                <ul className="space-y-3">
-                  {items.map((item) => (
-                    <li key={item.id}>
-                      <Link
-                        to={item.route}
-                        onClick={() => handleAccess(item)}
-                        className="block rounded-2xl border border-slate-100 px-4 py-3 shadow-sm transition hover:scale-[1.01] hover:bg-emerald-50/70"
-                      >
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm font-semibold text-slate-800">
-                            {item.title}
-                          </p>
-                          <span className="rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
-                            {item.count}
-                          </span>
-                        </div>
-                        <p className="mt-1 text-xs text-slate-500">
-                          {item.description}
-                        </p>
-                        <div className="mt-2 text-[10px] text-slate-400">
-                          {new Date(item.createdAt).toLocaleString()}
-                        </div>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-            <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-4 py-3 text-xs font-semibold text-emerald-700">
-              <Link
-                to="/tasks-admin"
-                className="transition hover:text-emerald-900"
-              >
-                Gestion de tareas
-              </Link>
-              <Link
-                to="/messages"
-                className="transition hover:text-emerald-900"
-              >
-                Mensajes
-              </Link>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {isClient ? createPortal(panelContent, document.body) : panelContent}
     </div>
   );
 }
