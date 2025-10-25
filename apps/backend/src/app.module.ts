@@ -21,18 +21,34 @@ import { RepositoriesModule } from "./repositories/repositories.module";
       rootPath: join(process.cwd(), "uploads"),
       serveRoot: "/uploads",
     }),
-TypeOrmModule.forRootAsync({
-  imports: [ConfigModule],
-  inject: [ConfigService],
-  useFactory: (cfg: ConfigService) => ({
-    type: 'postgres',
-    url: cfg.get('DATABASE_URL'),
-    autoLoadEntities: true,
-    synchronize: cfg.get('DB_SYNC') === 'true',
-    ssl: { rejectUnauthorized: false },
-  }),
-}),
-
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (cfg: ConfigService) => {
+        const databaseUrl = cfg.get('DATABASE_URL');
+        if (databaseUrl) {
+          // 🔹 Modo nube (Render)
+          return {
+            type: 'postgres',
+            url: databaseUrl,
+            autoLoadEntities: true,
+            synchronize: cfg.get('DB_SYNC') === 'true',
+            ssl: { rejectUnauthorized: false },
+          };
+        }
+        // 🔹 Modo local (Docker)
+        return {
+          type: 'postgres',
+          host: cfg.get('DB_HOST') || 'localhost',
+          port: parseInt(cfg.get<string>('DB_PORT') ?? '5432', 10),
+          username: cfg.get('DB_USERNAME') || 'postgres',
+          password: cfg.get('DB_PASSWORD') || 'postgres',
+          database: cfg.get('DB_DATABASE') || 'internetperla',
+          autoLoadEntities: true,
+          synchronize: cfg.get('DB_SYNC') === 'true',
+        };
+      },
+    }),
     AuthModule,
     RepositoriesModule,
     UsersModule,
@@ -41,7 +57,7 @@ TypeOrmModule.forRootAsync({
     InventoryModule,
     FinanceModule,
     MessagesModule,
-  TasksModule,
+    TasksModule,
   ],
   controllers: [HealthController],
 })
