@@ -5,66 +5,84 @@ import { UserPlus, Users, Edit, Trash2, X, Check, AtSign, KeyRound, User } from 
 
 import api from '../services/api';
 
-type User = { id:string; email:string; name?:string; role:'ADMIN'|'USER' };
+type WorkerUser = { id: string; email: string; name?: string; role: 'ADMIN' | 'USER' };
 
-const glassCard = 'backdrop-blur-xl bg-white/80 shadow-xl shadow-emerald-100/60 border border-white/30';
+const glassCard =
+  'backdrop-blur-xl bg-white/80 shadow-xl shadow-emerald-100/60 border border-white/30';
 
-export default function Workers(){
-  const [rows,setRows] = useState<User[]>([]);
-  const [form,setForm] = useState({ name:'', email:'', password:'' });
-  const [loading,setLoading] = useState(true);
-  const [editing,setEditing] = useState<{ id:string; name:string; email:string; password:string }|null>(null);
+export default function Workers() {
+  const [rows, setRows] = useState<WorkerUser[]>([]);
+  const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<{
+    id: string;
+    name: string;
+    email: string;
+    password: string;
+  } | null>(null);
 
-  const load = async()=>{
+  const load = async () => {
     setLoading(true);
     try {
       const { data } = await api.get('/users');
-      const list: User[] = (data.value || data) as any;
-      setRows(list.filter(u=>u.role==='USER'));
-    } catch (err) {
+      const list: WorkerUser[] = (data.value || data) as WorkerUser[];
+      setRows(list.filter((u) => u.role === 'USER'));
+    } catch {
       toast.error('No se pudieron cargar los trabajadores.');
     } finally {
       setLoading(false);
     }
   };
-  useEffect(()=>{ load(); },[]);
 
-  const create = async()=>{
-    if (!form.name || !form.email || !form.password) return toast.error('Completa todos los campos');
+  useEffect(() => {
+    load();
+  }, []);
+
+  const create = async () => {
+    if (!form.name || !form.email || !form.password)
+      return toast.error('Completa todos los campos');
+
     try {
       await api.post('/users', { ...form, role: 'USER' });
       toast.success('Trabajador creado');
-      setForm({ name:'', email:'', password:'' });
+      setForm({ name: '', email: '', password: '' });
       load();
-    } catch (err) {
+    } catch {
       toast.error('No se pudo crear el trabajador.');
     }
   };
 
-  const remove = async(id:string)=>{
+  const remove = async (id: string) => {
     if (!window.confirm('¿Estás seguro de que quieres eliminar a este trabajador?')) return;
     try {
       await api.delete(`/users/${id}`);
       toast.success('Trabajador eliminado');
       load();
-    } catch (err) {
+    } catch {
       toast.error('No se pudo eliminar el trabajador.');
     }
   };
 
-  const startEdit = (u:User)=> setEditing({ id: u.id, name: u.name || '', email: u.email, password: '' });
-  const cancelEdit = ()=> setEditing(null);
-  const saveEdit = async()=>{
+  const startEdit = (u: WorkerUser) =>
+    setEditing({ id: u.id, name: u.name || '', email: u.email, password: '' });
+
+  const cancelEdit = () => setEditing(null);
+
+  const saveEdit = async () => {
     if (!editing) return;
     if (!editing.email) return toast.error('El correo es requerido');
+
     try {
-      const payload: any = { email: editing.email, name: editing.name };
+      const payload: Record<string, string> = {
+        email: editing.email,
+        name: editing.name,
+      };
       if (editing.password) payload.password = editing.password;
       await api.patch(`/users/${editing.id}`, payload);
       toast.success('Trabajador actualizado');
       setEditing(null);
       load();
-    } catch (err) {
+    } catch {
       toast.error('No se pudo actualizar el trabajador.');
     }
   };
@@ -94,68 +112,98 @@ export default function Workers(){
           </motion.p>
         </header>
 
-        <motion.section 
-          className={`${glassCard} rounded-3xl p-6`} 
-          initial={{ opacity: 0, y: 20 }} 
-          animate={{ opacity: 1, y: 0 }} 
+        <motion.section
+          className={`${glassCard} rounded-3xl p-6`}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
           <h2 className="text-lg font-semibold text-slate-900 mb-4">Añadir Nuevo Colaborador</h2>
           <div className="grid md:grid-cols-4 gap-4 items-center">
             <div className="relative">
               <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-400" />
-              <input className="w-full rounded-full border border-emerald-200/70 bg-white px-9 py-2 text-sm shadow-inner focus:border-emerald-400 focus:outline-none" placeholder="Nombre" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} />
+              <input
+                className="w-full rounded-full border border-emerald-200/70 bg-white px-9 py-2 text-sm shadow-inner focus:border-emerald-400 focus:outline-none"
+                placeholder="Nombre"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+              />
             </div>
             <div className="relative">
               <AtSign className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-400" />
-              <input className="w-full rounded-full border border-emerald-200/70 bg-white px-9 py-2 text-sm shadow-inner focus:border-emerald-400 focus:outline-none" placeholder="Correo" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} />
+              <input
+                className="w-full rounded-full border border-emerald-200/70 bg-white px-9 py-2 text-sm shadow-inner focus:border-emerald-400 focus:outline-none"
+                placeholder="Correo"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+              />
             </div>
             <div className="relative">
               <KeyRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-400" />
-              <input className="w-full rounded-full border border-emerald-200/70 bg-white px-9 py-2 text-sm shadow-inner focus:border-emerald-400 focus:outline-none" placeholder="Contraseña" type="password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} />
+              <input
+                className="w-full rounded-full border border-emerald-200/70 bg-white px-9 py-2 text-sm shadow-inner focus:border-emerald-400 focus:outline-none"
+                placeholder="Contraseña"
+                type="password"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+              />
             </div>
-            <button onClick={create} className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-200 transition hover:bg-emerald-600">
+            <button
+              onClick={create}
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-200 transition hover:bg-emerald-600"
+            >
               <UserPlus className="h-4 w-4" />
               Crear
             </button>
           </div>
         </motion.section>
 
-        <motion.section 
-          className={`${glassCard} flex-1 rounded-3xl p-6`} 
-          initial={{ opacity: 0, y: 20 }} 
-          animate={{ opacity: 1, y: 0 }} 
+        <motion.section
+          className={`${glassCard} flex-1 rounded-3xl p-6`}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
         >
           <div className="flex items-center gap-3 mb-4">
             <Users className="h-6 w-6 text-emerald-600" />
             <h2 className="text-xl font-bold text-slate-900">Listado de Colaboradores</h2>
           </div>
+
           <div className="overflow-y-auto custom-scrollbar max-h-[60vh]">
             <ul className="space-y-3 pr-2">
-              {rows.map((u,i)=> (
-                <motion.li 
-                  key={u.id} 
+              {rows.map((u: WorkerUser, i: number) => (
+                <motion.li
+                  key={u.id}
                   className="bg-white/70 p-4 rounded-2xl border border-white/50 shadow-sm flex items-center justify-between gap-4"
-                  initial={{opacity:0,y:6}}
-                  animate={{opacity:1,y:0}}
-                  transition={{delay:i*0.03}}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.03 }}
                 >
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-slate-800 truncate">{u.name||'-'}</div>
+                    <div className="font-semibold text-slate-800 truncate">{u.name || '-'}</div>
                     <div className="text-sm text-slate-500 truncate">{u.email}</div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <button onClick={()=>startEdit(u)} className="p-2 rounded-full text-emerald-600 bg-emerald-100/60 hover:bg-emerald-100 transition">
+                    <button
+                      onClick={() => startEdit(u)}
+                      className="p-2 rounded-full text-emerald-600 bg-emerald-100/60 hover:bg-emerald-100 transition"
+                    >
                       <Edit className="h-4 w-4" />
                     </button>
-                    <button onClick={()=>remove(u.id)} className="p-2 rounded-full text-red-600 bg-red-100/60 hover:bg-red-100 transition">
+                    <button
+                      onClick={() => remove(u.id)}
+                      className="p-2 rounded-full text-red-600 bg-red-100/60 hover:bg-red-100 transition"
+                    >
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
                 </motion.li>
               ))}
-              {!loading && rows.length===0 && <li className="text-center text-slate-500 py-8">No hay colaboradores registrados.</li>}
+              {!loading && rows.length === 0 && (
+                <li className="text-center text-slate-500 py-8">
+                  No hay colaboradores registrados.
+                </li>
+              )}
             </ul>
           </div>
         </motion.section>
@@ -179,23 +227,46 @@ export default function Workers(){
               <div className="space-y-4">
                 <div className="relative">
                   <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-400" />
-                  <input className="w-full rounded-full border border-emerald-200/70 bg-white px-9 py-2 text-sm shadow-inner focus:border-emerald-400 focus:outline-none" placeholder="Nombre" value={editing.name} onChange={e=>setEditing({...editing, name: e.target.value})} />
+                  <input
+                    className="w-full rounded-full border border-emerald-200/70 bg-white px-9 py-2 text-sm shadow-inner focus:border-emerald-400 focus:outline-none"
+                    placeholder="Nombre"
+                    value={editing.name}
+                    onChange={(e) => setEditing({ ...editing, name: e.target.value })}
+                  />
                 </div>
                 <div className="relative">
                   <AtSign className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-400" />
-                  <input className="w-full rounded-full border border-emerald-200/70 bg-white px-9 py-2 text-sm shadow-inner focus:border-emerald-400 focus:outline-none" placeholder="Correo" value={editing.email} onChange={e=>setEditing({...editing, email: e.target.value})} />
+                  <input
+                    className="w-full rounded-full border border-emerald-200/70 bg-white px-9 py-2 text-sm shadow-inner focus:border-emerald-400 focus:outline-none"
+                    placeholder="Correo"
+                    value={editing.email}
+                    onChange={(e) => setEditing({ ...editing, email: e.target.value })}
+                  />
                 </div>
                 <div className="relative">
                   <KeyRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-400" />
-                  <input className="w-full rounded-full border border-emerald-200/70 bg-white px-9 py-2 text-sm shadow-inner focus:border-emerald-400 focus:outline-none" type="password" placeholder="Nueva contraseña (opcional)" value={editing.password} onChange={e=>setEditing({...editing, password: e.target.value})} />
+                  <input
+                    className="w-full rounded-full border border-emerald-200/70 bg-white px-9 py-2 text-sm shadow-inner focus:border-emerald-400 focus:outline-none"
+                    type="password"
+                    placeholder="Nueva contraseña (opcional)"
+                    value={editing.password}
+                    onChange={(e) => setEditing({ ...editing, password: e.target.value })}
+                  />
                 </div>
               </div>
+
               <div className="mt-6 flex justify-end gap-3">
-                <button onClick={cancelEdit} className="inline-flex items-center justify-center gap-2 rounded-full bg-white/80 border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">
+                <button
+                  onClick={cancelEdit}
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-white/80 border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                >
                   <X className="h-4 w-4" />
                   Cancelar
                 </button>
-                <button onClick={saveEdit} className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-200 transition hover:bg-emerald-600">
+                <button
+                  onClick={saveEdit}
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-200 transition hover:bg-emerald-600"
+                >
                   <Check className="h-4 w-4" />
                   Guardar
                 </button>
