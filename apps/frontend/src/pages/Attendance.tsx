@@ -2,76 +2,75 @@ import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, Filter, RefreshCw, Search, CheckCircle, User, Type, FileText } from 'lucide-react';
 import { toast } from 'sonner';
-
 import api from '../services/api';
 import { LoadingState } from '../components/ip/LoadingState';
 import { ErrorState } from '../components/ip/ErrorState';
 import { useSocket } from '../hooks/useSocket';
 
-type Rec = { id:string; name:string; tipo:'IN'|'OUT'; timestamp:string; note?:string };
+type Rec = { id: string; name: string; tipo: 'IN' | 'OUT'; timestamp: string; note?: string };
 
 const glassCard = 'backdrop-blur-xl bg-white/80 shadow-xl shadow-emerald-100/60 border border-white/30';
 
-export default function Attendance(){
-  const [rows,setRows] = useState<Rec[]>([]);
-  const [loading,setLoading] = useState(true);
-  const [error,setError] = useState<string|undefined>();
-
-  const [filter,setFilter] = useState<'ALL'|'WEEK'|'MONTH'>('ALL');
-  const [search,setSearch] = useState('');
+export default function Attendance() {
+  const [rows, setRows] = useState<Rec[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | undefined>();
+  const [filter, setFilter] = useState<'ALL' | 'WEEK' | 'MONTH'>('ALL');
+  const [search, setSearch] = useState('');
   const { socket } = useSocket();
 
-  // State for weekly view
-  const [users, setUsers] = useState<{id: string, name: string, email: string}[]>([]);
+  const [users, setUsers] = useState<{ id: string; name: string; email: string }[]>([]);
   const [selectedUser, setSelectedUser] = useState<string>('');
 
   useEffect(() => {
-    // Fetch users for the dropdown
-    api.get('/users').then(r => setUsers(r.data)).catch(() => toast.error('No se pudo cargar la lista de trabajadores.'));
+    api.get('/users')
+      .then(r => setUsers(r.data))
+      .catch(() => toast.error('No se pudo cargar la lista de trabajadores.'));
   }, []);
 
-  const load = ()=>{
+  const load = () => {
     setLoading(true);
     setError(undefined);
     api.get('/attendance')
-      .then(r=>setRows(r.data))
-      .catch(()=>setError('Error al cargar asistencia'))
-      .finally(()=>setLoading(false));
+      .then(r => setRows(r.data))
+      .catch(() => setError('Error al cargar asistencia'))
+      .finally(() => setLoading(false));
   };
 
-  useEffect(()=>{ load(); },[]);
+  useEffect(() => { load(); }, []);
 
-  useEffect(()=>{
+  useEffect(() => {
     if (!socket) return;
-    const onNew = ()=> {
+    const onNew = () => {
       toast.info('Nuevo registro de asistencia recibido.');
       load();
     };
     socket.on('attendance:created', onNew);
-    return ()=>{ socket.off('attendance:created', onNew); };
-  },[socket]);
+    return () => { socket.off('attendance:created', onNew); };
+  }, [socket]);
 
-
-
-  const filtered = useMemo(()=>{
+  const filtered = useMemo(() => {
     const now = new Date();
     const startOfWeek = new Date(now);
     startOfWeek.setDate(now.getDate() - now.getDay());
-    startOfWeek.setHours(0,0,0,0);
+    startOfWeek.setHours(0, 0, 0, 0);
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    return rows.filter(r=>{
+    return rows.filter(r => {
       const t = new Date(r.timestamp);
-      const byRange = filter==='ALL' || (filter==='WEEK' && t>=startOfWeek) || (filter==='MONTH' && t>=startOfMonth);
+      const byRange =
+        filter === 'ALL' ||
+        (filter === 'WEEK' && t >= startOfWeek) ||
+        (filter === 'MONTH' && t >= startOfMonth);
       const byName = !search || r.name.toLowerCase().includes(search.toLowerCase());
       return byRange && byName;
     });
-  },[rows,filter,search]);
+  }, [rows, filter, search]);
 
   const { weeklyData, bonusEligible } = useMemo(() => {
     if (!selectedUser) return { weeklyData: [], bonusEligible: false };
 
     const now = new Date();
-    const dayOfWeek = now.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+    const dayOfWeek = now.getDay();
     const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
     const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMonday);
     startOfWeek.setHours(0, 0, 0, 0);
@@ -82,7 +81,7 @@ export default function Attendance(){
       return {
         date: day,
         dayName: day.toLocaleDateString('es-ES', { weekday: 'long' }),
-        records: [] as Rec[]
+        records: [] as Rec[],
       };
     });
 
@@ -96,9 +95,9 @@ export default function Attendance(){
     });
 
     userRecords.forEach(rec => {
-      const recDay = new Date(rec.timestamp).getDay(); // 0=Sun, 1=Mon...
+      const recDay = new Date(rec.timestamp).getDay();
       const dayIndex = recDay === 0 ? 6 : recDay - 1;
-      if (dayIndex < 6) { // Only Mon-Sat
+      if (dayIndex < 6) {
         weekDays[dayIndex].records.push(rec);
       }
     });
@@ -111,37 +110,32 @@ export default function Attendance(){
         date: day.date.toISOString().slice(0, 10),
         checkIn: checkIn ? new Date(checkIn.timestamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '---',
         checkOut: checkOut ? new Date(checkOut.timestamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '---',
-        attended: !!checkIn
+        attended: !!checkIn,
+        bonus: '', // ✅ agregado para evitar error TS2339
       };
     });
 
     const bonusEligible = processedData.length === 6 && processedData.every(day => day.attended);
-
     return { weeklyData: processedData, bonusEligible };
   }, [selectedUser, users, rows]);
 
-  // --- Editing Logic ---
-  const [editingCell, setEditingCell] = useState<{date: string, field: 'checkIn' | 'checkOut' | 'bonus' } | null>(null);
+  const [editingCell, setEditingCell] = useState<{ date: string; field: 'checkIn' | 'checkOut' | 'bonus' } | null>(null);
   const [editValue, setEditValue] = useState('');
 
   const handleSave = async () => {
     if (!editingCell) return;
-
     const user = users.find(u => u.id === selectedUser);
     if (!user) return;
-
     try {
-      // NOTE: This endpoint does not exist yet and needs to be created in the backend.
-      // It should handle creating/updating attendance records manually.
       await api.post('/attendance/manual-entry', {
         name: user.name,
         date: editingCell.date,
-        type: editingCell.field, // 'checkIn', 'checkOut', 'bonus'
-        value: editValue
+        type: editingCell.field,
+        value: editValue,
       });
       toast.success('Cambio guardado exitosamente.');
-      load(); // Refresh data
-    } catch (err) {
+      load();
+    } catch {
       toast.error('No se pudo guardar el cambio.');
     } finally {
       setEditingCell(null);
@@ -152,19 +146,14 @@ export default function Attendance(){
   const handleEditClick = (day: any, field: 'checkIn' | 'checkOut' | 'bonus') => {
     setEditingCell({ date: day.date, field });
     const currentValue = day[field];
-    // For time, we need HH:MM format for the input
-    if (currentValue.includes(':')) {
-      setEditValue(currentValue);
-    } else {
-      setEditValue(''); // For '---' or bonus placeholder
-    }
+    if (currentValue.includes(':')) setEditValue(currentValue);
+    else setEditValue('');
   };
 
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden px-3 py-6 sm:px-6 lg:px-10">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.25),_transparent_55%),_radial-gradient(circle_at_bottom_right,_rgba(14,165,233,0.25),_transparent_60%)]" />
       <div className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 w-[140%] bg-[conic-gradient(from_180deg_at_50%_50%,rgba(16,185,129,0.12),rgba(14,165,233,0.08),rgba(16,185,129,0.12))] blur-3xl opacity-35" />
-
       <div className="relative z-10 flex flex-1 flex-col gap-8 overflow-hidden">
         <header>
           <motion.h1
@@ -188,31 +177,18 @@ export default function Attendance(){
         {loading && <LoadingState message="Cargando asistencia..." />}
         {error && <ErrorState message={error} onRetry={load} />}
 
-
-
-        {/* Weekly View Section */}
-        <motion.section
-          className={`${glassCard} rounded-3xl p-6`}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-        >
+        {/* Vista Semanal */}
+        <motion.section className={`${glassCard} rounded-3xl p-6`} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }}>
           <h2 className="text-lg font-semibold text-slate-900 mb-4">Vista Semanal por Trabajador</h2>
           <div className="relative max-w-xs">
             <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-400" />
-            <select 
-              className="w-full appearance-none rounded-full border border-emerald-200/70 bg-white px-9 py-2 text-sm shadow-inner focus:border-emerald-400 focus:outline-none"
-              value={selectedUser}
-              onChange={e => setSelectedUser(e.target.value)}
-            >
+            <select className="w-full appearance-none rounded-full border border-emerald-200/70 bg-white px-9 py-2 text-sm shadow-inner focus:border-emerald-400 focus:outline-none"
+              value={selectedUser} onChange={e => setSelectedUser(e.target.value)}>
               <option value="">Seleccione un trabajador</option>
-              {users.map(u => (
-                <option key={u.id} value={u.id}>{u.name || u.email}</option>
-              ))}
+              {users.map(u => (<option key={u.id} value={u.id}>{u.name || u.email}</option>))}
             </select>
           </div>
 
-          {/* Weekly table */}
           {selectedUser && (
             <div className="mt-6">
               <div className="overflow-x-auto custom-scrollbar">
@@ -229,54 +205,30 @@ export default function Attendance(){
                     {weeklyData.map(day => (
                       <tr key={day.date}>
                         <td className="px-4 py-3 font-semibold text-slate-800 capitalize">{day.dayName} <span className="text-xs text-slate-400">{day.date}</span></td>
-                        
-                        {/* Check-in Cell */}
                         <td className="px-4 py-3 text-slate-600">
                           {editingCell?.date === day.date && editingCell?.field === 'checkIn' ? (
-                            <input 
-                              type="time" 
-                              value={editValue}
-                              onChange={e => setEditValue(e.target.value)}
-                              onBlur={handleSave}
-                              onKeyDown={e => e.key === 'Enter' && handleSave()}
-                              autoFocus
-                              className="w-24 rounded border-emerald-300 bg-white px-1 py-0.5 text-sm shadow-inner focus:border-emerald-400 focus:outline-none"
-                            />
+                            <input type="time" value={editValue} onChange={e => setEditValue(e.target.value)} onBlur={handleSave}
+                              onKeyDown={e => e.key === 'Enter' && handleSave()} autoFocus
+                              className="w-24 rounded border-emerald-300 bg-white px-1 py-0.5 text-sm shadow-inner focus:border-emerald-400 focus:outline-none" />
                           ) : (
                             <div onClick={() => handleEditClick(day, 'checkIn')} className="cursor-pointer w-full h-full">{day.checkIn}</div>
                           )}
                         </td>
-
-                        {/* Check-out Cell */}
                         <td className="px-4 py-3 text-slate-600">
                           {editingCell?.date === day.date && editingCell?.field === 'checkOut' ? (
-                            <input 
-                              type="time" 
-                              value={editValue}
-                              onChange={e => setEditValue(e.target.value)}
-                              onBlur={handleSave}
-                              onKeyDown={e => e.key === 'Enter' && handleSave()}
-                              autoFocus
-                              className="w-24 rounded border-emerald-300 bg-white px-1 py-0.5 text-sm shadow-inner focus:border-emerald-400 focus:outline-none"
-                            />
+                            <input type="time" value={editValue} onChange={e => setEditValue(e.target.value)} onBlur={handleSave}
+                              onKeyDown={e => e.key === 'Enter' && handleSave()} autoFocus
+                              className="w-24 rounded border-emerald-300 bg-white px-1 py-0.5 text-sm shadow-inner focus:border-emerald-400 focus:outline-none" />
                           ) : (
                             <div onClick={() => handleEditClick(day, 'checkOut')} className="cursor-pointer w-full h-full">{day.checkOut}</div>
                           )}
                         </td>
-
                         {bonusEligible && (
                           <td className="px-4 py-3 text-emerald-600 font-semibold">
                             {editingCell?.date === day.date && editingCell?.field === 'bonus' ? (
-                              <input 
-                                type="text" 
-                                value={editValue}
-                                onChange={e => setEditValue(e.target.value)}
-                                onBlur={handleSave}
-                                onKeyDown={e => e.key === 'Enter' && handleSave()}
-                                autoFocus
-                                placeholder="Monto"
-                                className="w-24 rounded border-emerald-300 bg-white px-1 py-0.5 text-sm shadow-inner focus:border-emerald-400 focus:outline-none"
-                              />
+                              <input type="text" value={editValue} onChange={e => setEditValue(e.target.value)} onBlur={handleSave}
+                                onKeyDown={e => e.key === 'Enter' && handleSave()} autoFocus placeholder="Monto"
+                                className="w-24 rounded border-emerald-300 bg-white px-1 py-0.5 text-sm shadow-inner focus:border-emerald-400 focus:outline-none" />
                             ) : (
                               <div onClick={() => handleEditClick(day, 'bonus')} className="cursor-pointer w-full h-full">{day.bonus || 'Aplicar'}</div>
                             )}
@@ -285,11 +237,7 @@ export default function Attendance(){
                       </tr>
                     ))}
                     {weeklyData.length === 0 && (
-                      <tr>
-                        <td colSpan={bonusEligible ? 4 : 3} className="px-4 py-6 text-center text-sm text-slate-400">
-                          No hay datos de asistencia para esta semana.
-                        </td>
-                      </tr>
+                      <tr><td colSpan={bonusEligible ? 4 : 3} className="px-4 py-6 text-center text-sm text-slate-400">No hay datos de asistencia para esta semana.</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -303,12 +251,8 @@ export default function Attendance(){
           )}
         </motion.section>
 
-        <motion.section
-          className={`${glassCard} flex flex-1 flex-col rounded-3xl p-6`}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-        >
+        {/* Tabla general de registros */}
+        <motion.section className={`${glassCard} flex flex-1 flex-col rounded-3xl p-6`} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.4 }}>
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h2 className="text-lg font-semibold text-slate-900">Registros de Asistencia</h2>
@@ -317,11 +261,12 @@ export default function Attendance(){
             <div className="flex flex-wrap items-center gap-3">
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-400" />
-                <input className="w-64 rounded-full border border-emerald-200/70 bg-white px-9 py-2 text-sm shadow-inner focus:border-emerald-400 focus:outline-none" placeholder="Buscar por nombre" value={search} onChange={e=>setSearch(e.target.value)} />
+                <input className="w-64 rounded-full border border-emerald-200/70 bg-white px-9 py-2 text-sm shadow-inner focus:border-emerald-400 focus:outline-none"
+                  placeholder="Buscar por nombre" value={search} onChange={e => setSearch(e.target.value)} />
               </div>
               <div className="flex items-center gap-2 rounded-full border border-emerald-200/70 bg-white/80 px-3 py-2 text-xs font-semibold text-emerald-700">
                 <Filter className="h-3.5 w-3.5" />
-                <select className="appearance-none bg-transparent focus:outline-none" value={filter} onChange={e=>setFilter(e.target.value as any)}>
+                <select className="appearance-none bg-transparent focus:outline-none" value={filter} onChange={e => setFilter(e.target.value as any)}>
                   <option value="ALL">Todo</option>
                   <option value="WEEK">Semana actual</option>
                   <option value="MONTH">Mes actual</option>
@@ -345,7 +290,7 @@ export default function Attendance(){
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-emerald-50/60 bg-white/70">
-                  {filtered.map(r=> (
+                  {filtered.map(r => (
                     <tr key={r.id} className="transition hover:bg-emerald-50/70">
                       <td className="px-4 py-3 font-semibold text-slate-800">{r.name}</td>
                       <td className="px-4 py-3 text-slate-500">{r.tipo}</td>
@@ -354,11 +299,7 @@ export default function Attendance(){
                     </tr>
                   ))}
                   {filtered.length === 0 && (
-                    <tr>
-                      <td colSpan={4} className="px-4 py-6 text-center text-sm text-slate-400">
-                        No hay registros que coincidan con los filtros.
-                      </td>
-                    </tr>
+                    <tr><td colSpan={4} className="px-4 py-6 text-center text-sm text-slate-400">No hay registros que coincidan con los filtros.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -369,4 +310,3 @@ export default function Attendance(){
     </div>
   );
 }
-
