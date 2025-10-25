@@ -27,7 +27,22 @@ export class InventoryService {
     if (duplicateSku) {
       throw new BadRequestException(`El SKU "${dto.sku}" ya existe.`);
     }
-    return this.items.save(dto);
+    const item = await this.items.save(dto);
+
+    // Crear registros de stock en cero para todos los almacenes existentes
+    const warehouses = await this.warehouses.list();
+    if (warehouses?.length) {
+      await Promise.all(
+        warehouses.map(async (warehouse) => {
+          const existingStock = await this.stocks.findByItemAndWarehouse(item.id, warehouse.id);
+          if (!existingStock) {
+            await this.stocks.save({ item, warehouse, quantity: 0 } as any);
+          }
+        }),
+      );
+    }
+
+    return item;
   }
 
   async listItems(): Promise<InventoryItem[]> {

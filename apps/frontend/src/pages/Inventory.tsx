@@ -364,21 +364,71 @@ function AdminInventory({
     return Array.from(set);
   }, [items]);
 
-  const filteredStocks = useMemo(() => {
+  const filteredItems = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return stocks
-      .filter((stock) => (warehouseFilter === 'ALL' ? true : stock.warehouse?.id === warehouseFilter))
-      .filter((stock) => (categoryFilter === 'ALL' ? true : stock.item.category === categoryFilter))
-      .filter((stock) => {
-        if (riskFilter === 'ALL') return true;
-        const isLow = stock.quantity <= stock.item.minStock;
-        return riskFilter === 'LOW' ? isLow : !isLow;
+
+    const grouped = new Map<string, { item: Item; stocks: Stock[] }>();
+    for (const stock of stocks) {
+      const entry = grouped.get(stock.item.id) || { item: stock.item, stocks: [] };
+      entry.stocks.push(stock);
+      grouped.set(stock.item.id, entry);
+    }
+
+    return Array.from(grouped.values())
+      .filter(({ item, stocks: itemStocks }) => {
+        if (categoryFilter !== 'ALL' && item.category !== categoryFilter) {
+          return false;
+        }
+
+        const stocksForFilter =
+          warehouseFilter === 'ALL'
+            ? itemStocks
+            : itemStocks.filter((stock) => stock.warehouse?.id === warehouseFilter);
+
+        if (warehouseFilter !== 'ALL' && stocksForFilter.length === 0) {
+          return false;
+        }
+
+        const effectiveStocks = stocksForFilter.length > 0 ? stocksForFilter : itemStocks;
+        const totalQuantity = effectiveStocks.reduce((sum, stock) => sum + (stock.quantity || 0), 0);
+
+        if (riskFilter === 'LOW' && totalQuantity > item.minStock) {
+          return false;
+        }
+        if (riskFilter === 'HEALTHY' && totalQuantity <= item.minStock) {
+          return false;
+        }
+
+        if (!query) {
+          return true;
+        }
+
+        const haystack = [
+          item.name,
+          item.sku,
+          item.category,
+          ...effectiveStocks.map((stock) => stock.warehouse?.name ?? ''),
+        ]
+          .join(' ')
+          .toLowerCase();
+
+        return haystack.includes(query);
       })
-      .filter((stock) =>
-        !query
-          ? true
-          : `${stock.item.name} ${stock.item.sku} ${stock.warehouse?.name ?? ''}`.toLowerCase().includes(query)
-      )
+      .map(({ item, stocks: itemStocks }) => {
+        const stocksForFilter =
+          warehouseFilter === 'ALL'
+            ? itemStocks
+            : itemStocks.filter((stock) => stock.warehouse?.id === warehouseFilter);
+        const effectiveStocks = stocksForFilter.length > 0 ? stocksForFilter : itemStocks;
+        const totalQuantity = effectiveStocks.reduce((sum, stock) => sum + (stock.quantity || 0), 0);
+
+        return {
+          item,
+          stocks: effectiveStocks,
+          totalQuantity,
+          isLow: totalQuantity <= item.minStock,
+        };
+      })
       .sort((a, b) => a.item.name.localeCompare(b.item.name));
   }, [stocks, warehouseFilter, categoryFilter, riskFilter, search]);
 
@@ -693,41 +743,47 @@ function AdminInventory({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-emerald-50/60 bg-white/70">
-                  {filteredStocks.map((stock) => {
-                    const isLow = stock.quantity <= stock.item.minStock;
+                  {filteredItems.map((summary) => {
+                    const targetStock = summary.stocks[0];
+                    const warehouseNames = summary.stocks
+                      .map((stock) => stock.warehouse?.name)
+                      .filter(Boolean)
+                      .join(', ');
                     return (
-                      <tr key={stock.id} className="transition hover:bg-emerald-50/70">
-                        <td className="px-4 py-3 font-semibold text-slate-800">{stock.item.name}</td>
-                        <td className="px-4 py-3 text-slate-500">{stock.item.sku}</td>
-                        <td className="px-4 py-3 text-slate-500">{stock.warehouse.name}</td>
-                        <td className={`px-4 py-3 text-right font-semibold ${isLow ? 'text-amber-600' : 'text-emerald-600'}`}>
-                          {formatNumber(stock.quantity)}
+                      <tr key={summary.item.id} className="transition hover:bg-emerald-50/70">
+                        <td className="px-4 py-3 font-semibold text-slate-800">{summary.item.name}</td>
+                        <td className="px-4 py-3 text-slate-500">{summary.item.sku}</td>
+                        <td className="px-4 py-3 text-slate-500">{warehouseNames || 'Sin almacén'}</td>
+                        <td
+                          className={`px-4 py-3 text-right font-semibold ${summary.isLow ? 'text-amber-600' : 'text-emerald-600'}`}
+                        >
+                          {formatNumber(summary.totalQuantity)}
                         </td>
-                        <td className="px-4 py-3 text-right text-slate-500">{formatNumber(stock.item.minStock)}</td>
+                        <td className="px-4 py-3 text-right text-slate-500">{formatNumber(summary.item.minStock)}</td>
                         <td className="px-4 py-3 text-right">
                           <div className="inline-flex gap-2">
                             <button
-                              onClick={() => openMovementModal(stock, 'IN')}
+                              onClick={() => openMovementModal(targetStock, 'IN')}
                               className="rounded-full border border-emerald-700/40 bg-white px-3 py-1 text-xs font-semibold text-emerald-800 transition hover:bg-emerald-50"
                             >
                               Reponer
                             </button>
                             <button
-                              onClick={() => openMovementModal(stock, 'OUT')}
+                              onClick={() => openMovementModal(targetStock, 'OUT')}
                               className="rounded-full bg-emerald-700 px-3 py-1 text-xs font-semibold text-white shadow hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-300"
-                              disabled={stock.quantity === 0}
+                              disabled={summary.totalQuantity === 0}
                             >
                               Retirar
                             </button>
                             <button
-                              onClick={() => openEditItem(stock.item)}
+                              onClick={() => openEditItem(summary.item)}
                               className="rounded-full border border-blue-700/40 bg-white px-3 py-1 text-xs font-semibold text-blue-800 transition hover:bg-blue-50"
                               title="Editar item"
                             >
                               Editar
                             </button>
                             <button
-                              onClick={() => confirmDeleteItem(stock.item)}
+                              onClick={() => confirmDeleteItem(summary.item)}
                               className="rounded-full border border-red-700/40 bg-white px-3 py-1 text-xs font-semibold text-red-800 transition hover:bg-red-50"
                               title="Eliminar item"
                             >
@@ -738,7 +794,7 @@ function AdminInventory({
                       </tr>
                     );
                   })}
-                  {filteredStocks.length === 0 && (
+                  {filteredItems.length === 0 && (
                     <tr>
                       <td colSpan={6} className="px-4 py-6 text-center text-sm text-slate-400">
                         No hay elementos que coincidan con los filtros actuales.
@@ -766,7 +822,7 @@ function AdminInventory({
           <div className={`${glassCard} rounded-3xl p-6`}>
             <h3 className="text-base font-semibold text-slate-900">Alertas inmediatas</h3>
             <p className="text-xs text-slate-500">Items que requieren acción en los próximos minutos.</p>
-            <div className="mt-4 space-y-3">
+            <div className="mt-4 max-h-[340px] space-y-3 overflow-y-auto pr-1 custom-scrollbar">
               {critical.map((stock) => (
                 <motion.div
                   key={`${stock.item.id}-${stock.warehouse.id}`}
@@ -796,7 +852,7 @@ function AdminInventory({
               </div>
               <TrendingUp className="h-5 w-5 text-emerald-500" />
             </div>
-            <div className="mt-4 flex-1 overflow-y-auto custom-scrollbar">
+            <div className="mt-4 flex-1 overflow-y-auto custom-scrollbar max-h-[420px]">
               <ul className="space-y-3">
                 {recentMovements.map((movement) => (
                   <motion.li

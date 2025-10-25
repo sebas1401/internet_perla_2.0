@@ -286,10 +286,10 @@ function MessagesPane() {
   return (
     <div className="space-y-8">
       <MessagesHero pending={pendingCount} />
-      <div className="grid grid-cols-12 gap-6">
+  <div className="grid grid-cols-12 gap-6 md:h-[calc(100vh-260px)] md:min-h-[520px] md:items-stretch lg:gap-8">
         <motion.aside
           layout
-          className="col-span-12 overflow-hidden rounded-3xl border border-emerald-100/60 bg-white/90 shadow-lg shadow-emerald-500/5 backdrop-blur md:col-span-4"
+          className="col-span-12 overflow-hidden rounded-3xl border border-emerald-100/60 bg-white/90 shadow-lg shadow-emerald-500/5 backdrop-blur md:col-span-4 md:flex md:h-full md:min-h-0 md:flex-col"
           initial={{ opacity: 0, x: -24 }}
           animate={{ opacity: 1, x: 0 }}
         >
@@ -308,7 +308,7 @@ function MessagesPane() {
               />
             </div>
           </div>
-          <div className="h-full overflow-y-auto px-2 pb-4">
+          <div className="flex-1 overflow-y-auto px-2 pb-4 md:min-h-0">
             <div className="space-y-2">
               {filteredContacts.map((contact) => {
                 const active = contact.id === selected;
@@ -358,11 +358,11 @@ function MessagesPane() {
 
         <motion.section
           layout
-          className="relative col-span-12 flex flex-col overflow-hidden rounded-3xl border border-emerald-100/60 bg-white/90 shadow-2xl shadow-emerald-500/10 backdrop-blur md:col-span-8"
+          className="relative col-span-12 flex flex-col overflow-hidden rounded-3xl border border-emerald-100/60 bg-white/90 shadow-2xl shadow-emerald-500/10 backdrop-blur md:col-span-8 md:h-full md:min-h-0"
           initial={{ opacity: 0, x: 24 }}
           animate={{ opacity: 1, x: 0 }}
         >
-          <div className="relative flex items-center justify-between border-b border-emerald-100/80 bg-gradient-to-r from-emerald-50 via-white to-emerald-50 px-6 py-4">
+          <div className="relative flex shrink-0 items-center justify-between border-b border-emerald-100/80 bg-gradient-to-r from-emerald-50 via-white to-emerald-50 px-6 py-4">
             <div>
               <p className="text-xs uppercase tracking-wide text-emerald-500">Conversando con</p>
               <h3 className="text-lg font-semibold text-emerald-950">{currentContact ? currentContact.name || currentContact.email : 'Selecciona un contacto'}</h3>
@@ -380,11 +380,11 @@ function MessagesPane() {
             )}
           </div>
 
-          <div className="relative flex-1 overflow-hidden">
+          <div className="relative flex-1 overflow-hidden min-h-0">
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-lime-50" />
             <div className="pointer-events-none absolute -bottom-10 left-16 h-56 w-56 rounded-full bg-emerald-200/40 blur-3xl" />
             <div className="pointer-events-none absolute -top-16 right-12 h-52 w-52 rounded-full bg-teal-200/40 blur-3xl" />
-            <div ref={scroller} className="relative z-10 flex h-full flex-col gap-3 overflow-y-auto px-6 py-6">
+            <div ref={scroller} className="relative z-10 flex h-full flex-1 flex-col gap-3 overflow-y-auto px-6 py-6 custom-scrollbar md:min-h-0">
               {loadingThread && (
                 <div className="flex h-full w-full items-center justify-center text-emerald-500">
                   <Loader2 className="h-7 w-7 animate-spin" />
@@ -430,7 +430,7 @@ function MessagesPane() {
             </div>
           </div>
 
-          <div className="relative border-t border-emerald-100/70 bg-white/90 px-6 py-4">
+          <div className="relative shrink-0 border-t border-emerald-100/70 bg-white/90 px-6 py-4">
             <form onSubmit={handleSend} className="flex items-end gap-3">
               <button
                 type="button"

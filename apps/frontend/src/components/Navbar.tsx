@@ -3,10 +3,24 @@ import { useAuth } from "../hooks/useAuth";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
+  const logoSrc = "/perla-logo.svg";
   return (
     <header className="flex items-center justify-between p-4 brand-gradient text-white sticky top-0 z-20 shadow">
-      <Link to="/" className="font-bold hover:opacity-90 transition">
-        Internet Perla
+      <Link to="/" className="group flex items-center gap-2 font-bold transition hover:opacity-90">
+        <span className="relative flex h-9 w-9 items-center justify-center">
+          <span className="absolute inset-0 rounded-2xl bg-emerald-200/30 blur-sm" />
+          <span className="absolute inset-0 rounded-2xl border border-emerald-400/50" />
+          <span
+            className="absolute -inset-1 rounded-3xl border border-emerald-400/30 animate-ping"
+            style={{ animationDuration: "3s" }}
+          />
+          <span
+            className="absolute -inset-2.5 rounded-[1.75rem] border border-emerald-300/20 animate-ping"
+            style={{ animationDuration: "4.5s" }}
+          />
+          <img src={logoSrc} alt="Internet Perla" className="relative z-10 h-7 w-7 object-contain" />
+        </span>
+        <span className="leading-tight">Internet Perla</span>
       </Link>
       <nav className="flex gap-4 text-sm items-center">
         {user?.role === "ADMIN" && (

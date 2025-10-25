@@ -412,6 +412,7 @@ export function NotificationBell() {
 export default function AdminShell({ children }: PropsWithChildren) {
   const { user, logout } = useAuth();
   const nav = useNavigate();
+  const logoSrc = "/perla-logo.svg";
 
   const linkCls = ({ isActive }: any) =>
     `group flex items-center gap-3 rounded-xl px-3 py-2 transition ${
@@ -433,13 +434,23 @@ export default function AdminShell({ children }: PropsWithChildren) {
               "radial-gradient(circle at top, rgba(46,204,113,0.25), transparent 60%), radial-gradient(circle at bottom right, rgba(46,204,113,0.2), transparent 55%)",
           }}
         />
-        <div className="relative z-10 mb-4 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 font-semibold shadow-lg">
-            IP
+        <div className="relative z-10 mb-4 flex items-center gap-2">
+          <div className="relative flex h-12 w-12 items-center justify-center">
+            <span className="absolute inset-0 rounded-2xl bg-emerald-200/30 blur-sm" />
+            <span className="absolute inset-0 rounded-2xl border border-emerald-400/50" />
+            <span
+              className="absolute -inset-1 rounded-3xl border border-emerald-400/30 animate-ping"
+              style={{ animationDuration: '3s' }}
+            />
+            <span
+              className="absolute -inset-3 rounded-[1.75rem] border border-emerald-300/20 animate-ping"
+              style={{ animationDuration: '4.5s' }}
+            />
+            <img src={logoSrc} alt="Internet Perla" className="relative z-10 h-9 w-9 object-contain" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="font-semibold tracking-wide">InternetPerla</p>
-            <p className="text-xs text-white/60">Control centralizado</p>
+            <p className="text-xl font-bold tracking-tight text-white drop-shadow-sm">InternetPerla</p>
+            <p className="text-xs text-emerald-100">Control centralizado</p>
           </div>
           <NotificationBell />
         </div>
@@ -484,8 +495,17 @@ export default function AdminShell({ children }: PropsWithChildren) {
         </div>
       </aside>
       <div className="flex flex-1 flex-col overflow-visible">
-        <header className="brand-gradient sticky top-0 z-10 px-4 py-3 text-white shadow md:hidden">
-          Internet Perla
+        <header className="brand-gradient sticky top-0 z-10 flex items-center gap-2 px-4 py-3 text-white shadow md:hidden">
+          <div className="relative flex h-10 w-10 items-center justify-center">
+            <span className="absolute inset-0 rounded-2xl bg-emerald-200/30 blur-sm" />
+            <span className="absolute inset-0 rounded-2xl border border-emerald-400/50" />
+            <span
+              className="absolute -inset-1 rounded-3xl border border-emerald-400/30 animate-ping"
+              style={{ animationDuration: '3s' }}
+            />
+            <img src={logoSrc} alt="Internet Perla" className="relative z-10 h-7 w-7 object-contain" />
+          </div>
+          <span className="text-base font-semibold drop-shadow-sm">Internet Perla</span>
         </header>
         <motion.main
           className="flex-1 overflow-y-auto p-4 lg:p-6"
