@@ -317,7 +317,7 @@ export function NotificationBell() {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.96 }}
         onClick={togglePopover}
-        className="relative flex h-10 w-10 items-center justify-center rounded-2xl transition bg-emerald-100 text-emerald-700 hover:bg-emerald-200 md:bg-white/10 md:text-white/80 md:hover:bg-white/20 md:hover:text-white"
+        className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 text-white/80 transition hover:bg-white/20 hover:text-white"
       >
         <Bell size={18} />
         {pendingCount > 0 && (
@@ -329,7 +329,7 @@ export function NotificationBell() {
       <AnimatePresence>
         {open && (
           <motion.div
-            className="absolute right-0 z-[99999] mt-4 w-64 origin-top-right rounded-3xl border border-emerald-100 bg-white shadow-xl"
+            className="absolute left-1/2 z-[99999] mt-4 w-80 -translate-x-1/2 overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-xl"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -415,12 +415,7 @@ export default function AdminShell({ children }: PropsWithChildren) {
   const { user, logout } = useAuth();
   const nav = useNavigate();
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const handleNavLinkClick = () => {
-    if (isMobileMenuOpen) {
-      setMobileMenuOpen(false);
-    }
-  };
+  const logoSrc = "/perla-logo.svg";
 
   const linkCls = ({ isActive }: any) =>
     `group flex items-center gap-3 rounded-xl px-3 py-2 transition ${
@@ -429,26 +424,39 @@ export default function AdminShell({ children }: PropsWithChildren) {
         : "text-white/70 hover:bg-white/10 hover:text-white"
     }`;
 
-  const sidebarContent = (
+  const handleNavLinkClick = () => {
+    if (isMobileMenuOpen) {
+      setMobileMenuOpen(false);
+    }
+  };
+
+  const renderSidebarContent = (isMobile: boolean) => (
     <>
-      <div className="relative mb-4 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 font-semibold shadow-lg">
-            IP
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="font-semibold tracking-wide">InternetPerla</p>
-            <p className="text-xs text-white/60">Control centralizado</p>
-          </div>
+      <div className="relative z-10 mb-4 flex items-center gap-3">
+        <div className="relative flex h-12 w-12 items-center justify-center">
+          <span className="absolute inset-0 rounded-2xl bg-emerald-200/30 blur-sm" />
+          <span className="absolute inset-0 rounded-2xl border border-emerald-400/50" />
+          <span
+            className="absolute -inset-1 rounded-3xl border border-emerald-400/30 animate-ping"
+            style={{ animationDuration: "3s" }}
+          />
+          <span
+            className="absolute -inset-3 rounded-[1.75rem] border border-emerald-300/20 animate-ping"
+            style={{ animationDuration: "4.5s" }}
+          />
+          <img src={logoSrc} alt="Internet Perla" className="relative z-10 h-9 w-9 object-contain" />
         </div>
-        <div className="md:hidden">
+        <div className="min-w-0 flex-1">
+          <p className="text-xl font-bold tracking-tight text-white drop-shadow-sm">InternetPerla</p>
+          <p className="text-xs text-emerald-100">Control centralizado</p>
+        </div>
+        {isMobile ? (
           <button onClick={() => setMobileMenuOpen(false)} className="text-white/70 hover:text-white">
             <X size={24} />
           </button>
-        </div>
-        <div className="hidden md:block">
+        ) : (
           <NotificationBell />
-        </div>
+        )}
       </div>
       <nav className="relative flex flex-col gap-1">
         {navItems.map(({ to, label, icon: Icon }) => (
@@ -483,7 +491,10 @@ export default function AdminShell({ children }: PropsWithChildren) {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.97 }}
           className="flex items-center gap-3 rounded-xl px-3 py-2 text-red-300 transition hover:bg-red-500/20 hover:text-white"
-          onClick={logout}
+          onClick={() => {
+            handleNavLinkClick();
+            logout();
+          }}
         >
           <span className="rounded-lg bg-red-500/10 p-2">
             <LogOut size={16} />
@@ -497,7 +508,6 @@ export default function AdminShell({ children }: PropsWithChildren) {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Overlay for mobile */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
@@ -510,7 +520,6 @@ export default function AdminShell({ children }: PropsWithChildren) {
         )}
       </AnimatePresence>
 
-      {/* Sidebar for mobile */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.aside
@@ -520,12 +529,11 @@ export default function AdminShell({ children }: PropsWithChildren) {
             exit={{ x: "-100%" }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
           >
-            {sidebarContent}
+            {renderSidebarContent(true)}
           </motion.aside>
         )}
       </AnimatePresence>
 
-      {/* Sidebar for desktop */}
       <aside className="relative hidden h-full w-72 flex-shrink-0 flex-col gap-4 overflow-y-auto bg-[#0a2a06] p-6 text-white md:flex">
         <motion.div
           className="pointer-events-none absolute inset-0 opacity-70"
@@ -537,21 +545,32 @@ export default function AdminShell({ children }: PropsWithChildren) {
               "radial-gradient(circle at top, rgba(46,204,113,0.25), transparent 60%), radial-gradient(circle at bottom right, rgba(46,204,113,0.2), transparent 55%)",
           }}
         />
-        {sidebarContent}
+        {renderSidebarContent(false)}
       </aside>
 
-      <div className="flex flex-1 flex-col overflow-y-auto">
-        <header className="sticky top-0 z-20 flex items-center justify-between bg-white px-4 py-3 shadow-sm md:hidden">
-          <span className="font-semibold">Internet Perla</span>
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <header className="brand-gradient sticky top-0 z-20 flex items-center justify-between px-4 py-3 text-white shadow md:hidden">
+          <div className="flex items-center gap-3">
+            <div className="relative flex h-10 w-10 items-center justify-center">
+              <span className="absolute inset-0 rounded-2xl bg-emerald-200/30 blur-sm" />
+              <span className="absolute inset-0 rounded-2xl border border-emerald-400/50" />
+              <span
+                className="absolute -inset-1 rounded-3xl border border-emerald-400/30 animate-ping"
+                style={{ animationDuration: "3s" }}
+              />
+              <img src={logoSrc} alt="Internet Perla" className="relative z-10 h-7 w-7 object-contain" />
+            </div>
+            <span className="text-base font-semibold drop-shadow-sm">Internet Perla</span>
+          </div>
           <div className="flex items-center gap-2">
             <NotificationBell />
-            <button onClick={() => setMobileMenuOpen(true)} className="text-gray-600 hover:text-black">
+            <button onClick={() => setMobileMenuOpen(true)} className="text-white">
               <Menu size={24} />
             </button>
           </div>
         </header>
         <motion.main
-          className="flex-1 p-4 lg:p-6"
+          className="flex-1 overflow-y-auto p-4 lg:p-6"
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}

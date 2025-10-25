@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function Navbar() {
   const { user, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const logoSrc = "/perla-logo.svg";
 
   const handleLinkClick = () => {
     setIsOpen(false);
@@ -48,6 +49,9 @@ export default function Navbar() {
           <Link to="/my-tasks" className={linkClasses} onClick={handleLinkClick}>
             Mis Tareas
           </Link>
+          <Link to="/inventory" className={linkClasses} onClick={handleLinkClick}>
+            Inventario
+          </Link>
           <Link to="/messages" className={linkClasses} onClick={handleLinkClick}>
             Mensajes
           </Link>
@@ -63,19 +67,32 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="brand-gradient text-white sticky top-0 z-30 shadow">
+      <header className="brand-gradient sticky top-0 z-30 shadow text-white">
         <div className="flex items-center justify-between p-4">
-          <Link to="/" className="font-bold hover:opacity-90 transition">
-            Internet Perla
+          <Link to="/" className="group flex items-center gap-2 font-bold transition hover:opacity-90">
+            <span className="relative flex h-9 w-9 items-center justify-center">
+              <span className="absolute inset-0 rounded-2xl bg-emerald-200/30 blur-sm" />
+              <span className="absolute inset-0 rounded-2xl border border-emerald-400/50" />
+              <span
+                className="absolute -inset-1 rounded-3xl border border-emerald-400/30 animate-ping"
+                style={{ animationDuration: "3s" }}
+              />
+              <span
+                className="absolute -inset-2.5 rounded-[1.75rem] border border-emerald-300/20 animate-ping"
+                style={{ animationDuration: "4.5s" }}
+              />
+              <img src={logoSrc} alt="Internet Perla" className="relative z-10 h-7 w-7 object-contain" />
+            </span>
+            <span className="leading-tight">Internet Perla</span>
           </Link>
 
-          <nav className="hidden md:flex gap-4 text-sm items-center">
+          <nav className="hidden items-center gap-4 text-sm md:flex">
             {userRoleLinks(false)}
             <Link to="/profile" className="text-white/80 hover:text-white">
               Perfil
             </Link>
             <span className="text-white/80">{user?.email}</span>
-            <button onClick={logout} className="text-red-100 hover:text-white transition">
+            <button onClick={logout} className="text-red-100 transition hover:text-white">
               Salir
             </button>
           </nav>
@@ -91,7 +108,7 @@ export default function Navbar() {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            className="fixed inset-0 bg-black/30 z-40 md:hidden"
+            className="fixed inset-0 z-40 bg-black/30 md:hidden"
             onClick={() => setIsOpen(false)}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -103,32 +120,28 @@ export default function Navbar() {
       <AnimatePresence>
         {isOpen && (
           <motion.nav
-            className="fixed top-0 left-0 h-full w-4/5 max-w-sm bg-[#0a2a06] z-50 p-6 md:hidden"
+            className="fixed top-0 left-0 z-50 h-full w-4/5 max-w-sm bg-[#0a2a06] p-6 text-white md:hidden"
             initial={{ x: "-100%" }}
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
           >
-            <div className="flex flex-col gap-4 text-base h-full text-white">
-              <div className="pb-4 border-b mb-4">
-                <span className="font-bold text-lg">Menú</span>
+            <div className="flex h-full flex-col gap-4 text-base">
+              <div className="mb-4 border-b pb-4">
+                <span className="text-lg font-bold">Menú</span>
               </div>
               {userRoleLinks(true)}
-              <Link
-                to="/profile"
-                className="block py-2 px-3 rounded hover:bg-white/10"
-                onClick={handleLinkClick}
-              >
+              <Link to="/profile" className="block rounded py-2 px-3 hover:bg-white/10" onClick={handleLinkClick}>
                 Perfil
               </Link>
-              <div className="border-t pt-4 mt-auto">
-                <div className="text-sm text-gray-500 mb-2">{user?.email}</div>
+              <div className="mt-auto border-t pt-4">
+                <div className="mb-2 text-sm text-gray-400">{user?.email}</div>
                 <button
                   onClick={() => {
                     logout();
                     handleLinkClick();
                   }}
-                  className="w-full text-left block py-2 px-3 rounded text-red-300 hover:bg-red-500/20"
+                  className="block w-full rounded py-2 px-3 text-left text-red-300 hover:bg-red-500/20"
                 >
                   Salir
                 </button>
