@@ -17,8 +17,8 @@ export class Task {
   @Column("text", { nullable: true }) description: string;
   @ManyToOne(() => Customer, { eager: true, nullable: false })
   customer: Customer;
-  @ManyToOne(() => User, { eager: true, nullable: false }) assignedTo: User;
-  @ManyToOne(() => User, { eager: true, nullable: false }) createdBy: User;
+  @ManyToOne(() => User, { eager: true, nullable: true, onDelete: 'SET NULL' }) assignedTo: User;
+  @ManyToOne(() => User, { eager: true, nullable: true, onDelete: 'SET NULL' }) createdBy: User;
   // Store status as a simple string for compatibility and easier evolution
   @Column({ type: "varchar", default: "PENDIENTE" }) status: TaskStatus;
   @Column({ type: "varchar", length: 50, nullable: false })

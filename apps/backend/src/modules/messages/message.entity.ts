@@ -8,10 +8,10 @@ export class Message {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => User, { nullable: false, eager: true })
+  @ManyToOne(() => User, { nullable: false, eager: true, onDelete: 'CASCADE' })
   sender: User;
 
-  @ManyToOne(() => User, { nullable: false, eager: true })
+  @ManyToOne(() => User, { nullable: false, eager: true, onDelete: 'CASCADE' })
   recipient: User;
 
   @Column({ type: 'text' })
