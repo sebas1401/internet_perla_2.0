@@ -237,15 +237,7 @@ export default function LoginPage(){
               initial="hidden"
               animate="visible"
             >
-              <p className="text-gray-400">
-                ¿Sin cuenta?{' '}
-                <Link
-                  to="/register"
-                  className="text-green-500 hover:text-green-400 font-semibold transition-colors hover:underline"
-                >
-                  Regístrate aquí
-                </Link>
-              </p>
+              <p className="text-gray-400">© Ingenieros UMG. Todos los derechos reservados.</p>
             </motion.div>
 
             {/* Bottom accent */}
