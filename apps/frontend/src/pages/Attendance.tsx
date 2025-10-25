@@ -16,10 +16,19 @@ export default function Attendance(){
   const [rows,setRows] = useState<Rec[]>([]);
   const [loading,setLoading] = useState(true);
   const [error,setError] = useState<string|undefined>();
-  const [form,setForm] = useState({ name:'', tipo:'IN' as 'IN'|'OUT', note:'' });
+
   const [filter,setFilter] = useState<'ALL'|'WEEK'|'MONTH'>('ALL');
   const [search,setSearch] = useState('');
   const { socket } = useSocket();
+
+  // State for weekly view
+  const [users, setUsers] = useState<{id: string, name: string, email: string}[]>([]);
+  const [selectedUser, setSelectedUser] = useState<string>('');
+
+  useEffect(() => {
+    // Fetch users for the dropdown
+    api.get('/users').then(r => setUsers(r.data)).catch(() => toast.error('No se pudo cargar la lista de trabajadores.'));
+  }, []);
 
   const load = ()=>{
     setLoading(true);
@@ -42,16 +51,7 @@ export default function Attendance(){
     return ()=>{ socket.off('attendance:created', onNew); };
   },[socket]);
 
-  const check = async ()=>{
-    if (!form.name.trim()) {
-      toast.warning('El nombre es obligatorio.');
-      return;
-    }
-    await api.post('/attendance/check', form);
-    toast.success(`Registro de ${form.tipo} para ${form.name} guardado.`);
-    setForm({ name:'', tipo:'IN', note:'' });
-    load();
-  };
+
 
   const filtered = useMemo(()=>{
     const now = new Date();
@@ -66,6 +66,99 @@ export default function Attendance(){
       return byRange && byName;
     });
   },[rows,filter,search]);
+
+  const { weeklyData, bonusEligible } = useMemo(() => {
+    if (!selectedUser) return { weeklyData: [], bonusEligible: false };
+
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMonday);
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const weekDays = Array.from({ length: 6 }).map((_, i) => {
+      const day = new Date(startOfWeek);
+      day.setDate(startOfWeek.getDate() + i);
+      return {
+        date: day,
+        dayName: day.toLocaleDateString('es-ES', { weekday: 'long' }),
+        records: [] as Rec[]
+      };
+    });
+
+    const selectedUserName = users.find(u => u.id === selectedUser)?.name;
+    if (!selectedUserName) return { weeklyData: [], bonusEligible: false };
+
+    const userRecords = rows.filter(r => {
+      if (r.name !== selectedUserName) return false;
+      const recordDate = new Date(r.timestamp);
+      return recordDate >= startOfWeek && recordDate < new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000);
+    });
+
+    userRecords.forEach(rec => {
+      const recDay = new Date(rec.timestamp).getDay(); // 0=Sun, 1=Mon...
+      const dayIndex = recDay === 0 ? 6 : recDay - 1;
+      if (dayIndex < 6) { // Only Mon-Sat
+        weekDays[dayIndex].records.push(rec);
+      }
+    });
+
+    const processedData = weekDays.map(day => {
+      const checkIn = day.records.find(r => r.tipo === 'IN');
+      const checkOut = day.records.find(r => r.tipo === 'OUT');
+      return {
+        dayName: day.dayName,
+        date: day.date.toISOString().slice(0, 10),
+        checkIn: checkIn ? new Date(checkIn.timestamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '---',
+        checkOut: checkOut ? new Date(checkOut.timestamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '---',
+        attended: !!checkIn
+      };
+    });
+
+    const bonusEligible = processedData.length === 6 && processedData.every(day => day.attended);
+
+    return { weeklyData: processedData, bonusEligible };
+  }, [selectedUser, users, rows]);
+
+  // --- Editing Logic ---
+  const [editingCell, setEditingCell] = useState<{date: string, field: 'checkIn' | 'checkOut' | 'bonus' } | null>(null);
+  const [editValue, setEditValue] = useState('');
+
+  const handleSave = async () => {
+    if (!editingCell) return;
+
+    const user = users.find(u => u.id === selectedUser);
+    if (!user) return;
+
+    try {
+      // NOTE: This endpoint does not exist yet and needs to be created in the backend.
+      // It should handle creating/updating attendance records manually.
+      await api.post('/attendance/manual-entry', {
+        name: user.name,
+        date: editingCell.date,
+        type: editingCell.field, // 'checkIn', 'checkOut', 'bonus'
+        value: editValue
+      });
+      toast.success('Cambio guardado exitosamente.');
+      load(); // Refresh data
+    } catch (err) {
+      toast.error('No se pudo guardar el cambio.');
+    } finally {
+      setEditingCell(null);
+      setEditValue('');
+    }
+  };
+
+  const handleEditClick = (day: any, field: 'checkIn' | 'checkOut' | 'bonus') => {
+    setEditingCell({ date: day.date, field });
+    const currentValue = day[field];
+    // For time, we need HH:MM format for the input
+    if (currentValue.includes(':')) {
+      setEditValue(currentValue);
+    } else {
+      setEditValue(''); // For '---' or bonus placeholder
+    }
+  };
 
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden px-3 py-6 sm:px-6 lg:px-10">
@@ -95,30 +188,119 @@ export default function Attendance(){
         {loading && <LoadingState message="Cargando asistencia..." />}
         {error && <ErrorState message={error} onRetry={load} />}
 
+
+
+        {/* Weekly View Section */}
         <motion.section
           className={`${glassCard} rounded-3xl p-6`}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
         >
-          <h2 className="text-lg font-semibold text-slate-900 mb-4">Nuevo Registro</h2>
-          <div className="grid md:grid-cols-4 gap-4">
-            <div className="relative">
-              <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-400" />
-              <input className="w-full rounded-full border border-emerald-200/70 bg-white px-9 py-2 text-sm shadow-inner focus:border-emerald-400 focus:outline-none" placeholder="Nombre del colaborador" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} />
-            </div>
-            <div className="relative">
-              <Type className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-400" />
-              <select className="w-full appearance-none rounded-full border border-emerald-200/70 bg-white px-9 py-2 text-sm shadow-inner focus:border-emerald-400 focus:outline-none" value={form.tipo} onChange={e=>setForm({...form,tipo:e.target.value as any})}><option>IN</option><option>OUT</option></select>
-            </div>
-            <div className="relative">
-              <FileText className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-400" />
-              <input className="w-full rounded-full border border-emerald-200/70 bg-white px-9 py-2 text-sm shadow-inner focus:border-emerald-400 focus:outline-none" placeholder="Nota (opcional)" value={form.note} onChange={e=>setForm({...form,note:e.target.value})} />
-            </div>
-            <button onClick={check} className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-200 transition hover:bg-emerald-600">
-              <CheckCircle className="h-4 w-4" /> Registrar
-            </button>
+          <h2 className="text-lg font-semibold text-slate-900 mb-4">Vista Semanal por Trabajador</h2>
+          <div className="relative max-w-xs">
+            <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-400" />
+            <select 
+              className="w-full appearance-none rounded-full border border-emerald-200/70 bg-white px-9 py-2 text-sm shadow-inner focus:border-emerald-400 focus:outline-none"
+              value={selectedUser}
+              onChange={e => setSelectedUser(e.target.value)}
+            >
+              <option value="">Seleccione un trabajador</option>
+              {users.map(u => (
+                <option key={u.id} value={u.id}>{u.name || u.email}</option>
+              ))}
+            </select>
           </div>
+
+          {/* Weekly table */}
+          {selectedUser && (
+            <div className="mt-6">
+              <div className="overflow-x-auto custom-scrollbar">
+                <table className="min-w-full text-sm text-left">
+                  <thead className="bg-white/60 text-xs uppercase tracking-wide text-slate-500">
+                    <tr>
+                      <th className="px-4 py-3">Día</th>
+                      <th className="px-4 py-3">Entrada</th>
+                      <th className="px-4 py-3">Salida</th>
+                      {bonusEligible && <th className="px-4 py-3">Bonificación</th>}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-emerald-50/60 bg-white/70">
+                    {weeklyData.map(day => (
+                      <tr key={day.date}>
+                        <td className="px-4 py-3 font-semibold text-slate-800 capitalize">{day.dayName} <span className="text-xs text-slate-400">{day.date}</span></td>
+                        
+                        {/* Check-in Cell */}
+                        <td className="px-4 py-3 text-slate-600">
+                          {editingCell?.date === day.date && editingCell?.field === 'checkIn' ? (
+                            <input 
+                              type="time" 
+                              value={editValue}
+                              onChange={e => setEditValue(e.target.value)}
+                              onBlur={handleSave}
+                              onKeyDown={e => e.key === 'Enter' && handleSave()}
+                              autoFocus
+                              className="w-24 rounded border-emerald-300 bg-white px-1 py-0.5 text-sm shadow-inner focus:border-emerald-400 focus:outline-none"
+                            />
+                          ) : (
+                            <div onClick={() => handleEditClick(day, 'checkIn')} className="cursor-pointer w-full h-full">{day.checkIn}</div>
+                          )}
+                        </td>
+
+                        {/* Check-out Cell */}
+                        <td className="px-4 py-3 text-slate-600">
+                          {editingCell?.date === day.date && editingCell?.field === 'checkOut' ? (
+                            <input 
+                              type="time" 
+                              value={editValue}
+                              onChange={e => setEditValue(e.target.value)}
+                              onBlur={handleSave}
+                              onKeyDown={e => e.key === 'Enter' && handleSave()}
+                              autoFocus
+                              className="w-24 rounded border-emerald-300 bg-white px-1 py-0.5 text-sm shadow-inner focus:border-emerald-400 focus:outline-none"
+                            />
+                          ) : (
+                            <div onClick={() => handleEditClick(day, 'checkOut')} className="cursor-pointer w-full h-full">{day.checkOut}</div>
+                          )}
+                        </td>
+
+                        {bonusEligible && (
+                          <td className="px-4 py-3 text-emerald-600 font-semibold">
+                            {editingCell?.date === day.date && editingCell?.field === 'bonus' ? (
+                              <input 
+                                type="text" 
+                                value={editValue}
+                                onChange={e => setEditValue(e.target.value)}
+                                onBlur={handleSave}
+                                onKeyDown={e => e.key === 'Enter' && handleSave()}
+                                autoFocus
+                                placeholder="Monto"
+                                className="w-24 rounded border-emerald-300 bg-white px-1 py-0.5 text-sm shadow-inner focus:border-emerald-400 focus:outline-none"
+                              />
+                            ) : (
+                              <div onClick={() => handleEditClick(day, 'bonus')} className="cursor-pointer w-full h-full">{day.bonus || 'Aplicar'}</div>
+                            )}
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                    {weeklyData.length === 0 && (
+                      <tr>
+                        <td colSpan={bonusEligible ? 4 : 3} className="px-4 py-6 text-center text-sm text-slate-400">
+                          No hay datos de asistencia para esta semana.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              {bonusEligible && (
+                <div className="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-sm text-emerald-800">
+                  <p><span className="font-semibold">¡Bonificación Desbloqueada!</span> Este trabajador ha cumplido con la asistencia de la semana completa.</p>
+                </div>
+              )}
+            </div>
+          )}
         </motion.section>
 
         <motion.section

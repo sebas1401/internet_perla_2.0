@@ -317,7 +317,7 @@ export function NotificationBell() {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.96 }}
         onClick={togglePopover}
-        className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 text-white/80 transition hover:bg-white/20 hover:text-white"
+        className="relative flex h-10 w-10 items-center justify-center rounded-2xl transition bg-emerald-100 text-emerald-700 hover:bg-emerald-200 md:bg-white/10 md:text-white/80 md:hover:bg-white/20 md:hover:text-white"
       >
         <Bell size={18} />
         {pendingCount > 0 && (
@@ -329,7 +329,7 @@ export function NotificationBell() {
       <AnimatePresence>
         {open && (
           <motion.div
-            className="absolute left-1/2 z-[99999] mt-4 w-80 -translate-x-1/2 overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-xl"
+            className="absolute right-0 z-[99999] mt-4 w-64 origin-top-right rounded-3xl border border-emerald-100 bg-white shadow-xl"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -431,7 +431,7 @@ export default function AdminShell({ children }: PropsWithChildren) {
 
   const sidebarContent = (
     <>
-      <div className="relative z-10 mb-4 flex items-center justify-between gap-3">
+      <div className="relative mb-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 font-semibold shadow-lg">
             IP
@@ -450,7 +450,7 @@ export default function AdminShell({ children }: PropsWithChildren) {
           <NotificationBell />
         </div>
       </div>
-      <nav className="relative z-10 flex flex-col gap-1">
+      <nav className="relative flex flex-col gap-1">
         {navItems.map(({ to, label, icon: Icon }) => (
           <NavLink key={to} to={to} className={linkCls} end={to === "/"} onClick={handleNavLinkClick}>
             <motion.span
@@ -464,7 +464,7 @@ export default function AdminShell({ children }: PropsWithChildren) {
           </NavLink>
         ))}
       </nav>
-      <div className="relative z-10 mt-auto flex flex-col gap-2 border-t border-white/10 pt-4">
+      <div className="relative mt-auto flex flex-col gap-2 border-t border-white/10 pt-4">
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.97 }}
