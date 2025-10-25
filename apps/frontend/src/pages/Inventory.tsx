@@ -30,6 +30,8 @@ type AdminInventoryProps = {
   onCreateItem: (payload: { sku: string; name: string; category: string; minStock: number }) => Promise<void>;
   onCreateWarehouse: (payload: { name: string; location?: string }) => Promise<void>;
   onCreateMovement: (payload: MovementPayload) => Promise<void>;
+  onUpdateItem: (id: string, payload: { sku?: string; name?: string; category?: string; minStock?: number }) => Promise<void>;
+  onDeleteItem: (id: string) => Promise<void>;
 };
 
 type WorkerInventoryProps = {
@@ -247,6 +249,38 @@ export default function Inventory() {
     [refresh],
   );
 
+  const updateItem = useCallback(
+    async (id: string, payload: { sku?: string; name?: string; category?: string; minStock?: number }) => {
+      try {
+        await api.patch(`/inventory/items/${id}`, payload);
+        toast.success('Item actualizado');
+        await refresh();
+      } catch (err: any) {
+        console.error('No se pudo actualizar el item', err);
+        const message = err?.response?.data?.message;
+        toast.error(Array.isArray(message) ? message[0] : message || 'No se pudo actualizar el item.');
+        throw err;
+      }
+    },
+    [refresh],
+  );
+
+  const deleteItem = useCallback(
+    async (id: string) => {
+      try {
+        await api.delete(`/inventory/items/${id}`);
+        toast.success('Item eliminado');
+        await refresh();
+      } catch (err: any) {
+        console.error('No se pudo eliminar el item', err);
+        const message = err?.response?.data?.message;
+        toast.error(Array.isArray(message) ? message[0] : message || 'No se pudo eliminar el item.');
+        throw err;
+      }
+    },
+    [refresh],
+  );
+
   if (loading) {
     return (
       <div className="flex flex-1 items-center justify-center p-6">
@@ -278,6 +312,8 @@ export default function Inventory() {
         onCreateItem={createItem}
         onCreateWarehouse={createWarehouse}
         onCreateMovement={createMovement}
+        onUpdateItem={updateItem}
+        onDeleteItem={deleteItem}
       />
     );
   }
@@ -308,6 +344,8 @@ function AdminInventory({
   onCreateItem,
   onCreateWarehouse,
   onCreateMovement,
+  onUpdateItem,
+  onDeleteItem,
 }: AdminInventoryProps) {
   const [search, setSearch] = useState('');
   const [warehouseFilter, setWarehouseFilter] = useState<'ALL' | string>('ALL');
@@ -316,6 +354,7 @@ function AdminInventory({
   const [showItemModal, setShowItemModal] = useState(false);
   const [showWarehouseModal, setShowWarehouseModal] = useState(false);
   const [showMovementModal, setShowMovementModal] = useState(false);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [itemForm, setItemForm] = useState({ sku: '', name: '', category: '', minStock: 0 });
   const [warehouseForm, setWarehouseForm] = useState({ name: '', location: '' });
   const [movementForm, setMovementForm] = useState<MovementPayload>({ itemId: '', warehouseId: '', type: 'OUT', quantity: 1, note: '' });
@@ -395,6 +434,25 @@ function AdminInventory({
     setShowMovementModal(true);
   };
 
+  const openEditItem = (item: Item) => {
+    setEditingItemId(item.id);
+    setItemForm({
+      sku: item.sku,
+      name: item.name,
+      category: item.category,
+      minStock: item.minStock,
+    });
+    setShowItemModal(true);
+  };
+
+  const confirmDeleteItem = (item: Item) => {
+    if (window.confirm(`¿Estás seguro de que quieres eliminar el item "${item.name}"? No podrá recuperarse.`)) {
+      onDeleteItem(item.id).catch(() => {
+        // Error handled in hook
+      });
+    }
+  };
+
   const submitItem = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!itemForm.sku.trim() || !itemForm.name.trim()) {
@@ -402,13 +460,21 @@ function AdminInventory({
       return;
     }
     try {
-      await onCreateItem({
+      const payload = {
         sku: itemForm.sku.trim(),
         name: itemForm.name.trim(),
         category: itemForm.category.trim() || 'General',
         minStock: Number.isNaN(itemForm.minStock) ? 0 : Math.max(0, itemForm.minStock),
-      });
+      };
+
+      if (editingItemId) {
+        await onUpdateItem(editingItemId, payload);
+      } else {
+        await onCreateItem(payload);
+      }
+
       setItemForm({ sku: '', name: '', category: '', minStock: 0 });
+      setEditingItemId(null);
       setShowItemModal(false);
     } catch {
       // handled in hook
@@ -461,7 +527,7 @@ function AdminInventory({
         <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <motion.span
-              className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-300/60 bg-white/70 px-4 py-1 text-xs font-semibold text-emerald-700 shadow-sm"
+              className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-700/30 bg-emerald-600/15 px-4 py-1 text-xs font-semibold text-emerald-800 shadow-sm"
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
@@ -488,25 +554,25 @@ function AdminInventory({
           <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={() => setShowItemModal(true)}
-              className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-200 transition hover:bg-emerald-600"
+              className="inline-flex items-center gap-2 rounded-full bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-700/30 transition hover:bg-emerald-800"
             >
               <Boxes className="h-4 w-4" /> Nuevo item
             </button>
             <button
               onClick={() => setShowWarehouseModal(true)}
-              className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/80 px-4 py-2 text-sm font-semibold text-emerald-700 shadow hover:bg-emerald-50"
+              className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-600/30 transition hover:bg-emerald-700"
             >
               <Building2 className="h-4 w-4" /> Crear almacén
             </button>
             <button
               onClick={() => openMovementModal()}
-              className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/80 px-4 py-2 text-sm font-semibold text-emerald-700 shadow hover:bg-emerald-50"
+              className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-600/30 transition hover:bg-emerald-700"
             >
               <ClipboardList className="h-4 w-4" /> Registrar movimiento
             </button>
             <button
               onClick={() => onRefresh()}
-              className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/90 px-4 py-2 text-sm font-semibold text-emerald-700 shadow hover:bg-emerald-50"
+              className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-600/30 transition hover:bg-emerald-700"
             >
               <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} /> Sincronizar
             </button>
@@ -530,28 +596,28 @@ function AdminInventory({
             title="Items activos"
             value={formatNumber(stats.items)}
             hint={`${stats.categories} categorías detectadas`}
-            accent="bg-emerald-100 text-emerald-700"
+            accent="bg-emerald-700/20 text-emerald-800"
           />
           <StatCard
             icon={Building2}
             title="Almacenes"
             value={formatNumber(stats.warehouses)}
             hint="Centros logísticos sincronizados"
-            accent="bg-sky-100 text-sky-700"
+            accent="bg-emerald-600/20 text-emerald-700"
           />
           <StatCard
             icon={Box}
             title="Unidades disponibles"
             value={formatNumber(stats.units)}
             hint="Sumatoria total en stock"
-            accent="bg-violet-100 text-violet-700"
+            accent="bg-emerald-500/20 text-emerald-700"
           />
           <StatCard
             icon={AlertTriangle}
             title="Alertas críticas"
             value={formatNumber(stats.low)}
             hint="Items por debajo del mínimo"
-            accent="bg-amber-100 text-amber-700"
+            accent="bg-amber-500/20 text-amber-700"
           />
         </div>
 
@@ -563,15 +629,15 @@ function AdminInventory({
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-400" />
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-700" />
                 <input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Buscar SKU, nombre o almacén"
-                  className="w-64 rounded-full border border-emerald-200/70 bg-white px-9 py-2 text-sm shadow-inner focus:border-emerald-400 focus:outline-none"
+                  className="w-64 rounded-full border border-emerald-700/30 bg-white px-9 py-2 text-sm shadow-inner focus:border-emerald-700 focus:outline-none"
                 />
               </div>
-              <div className="flex items-center gap-2 rounded-full border border-emerald-200/70 bg-white/80 px-3 py-2 text-xs font-semibold text-emerald-700">
+              <div className="flex items-center gap-2 rounded-full border border-emerald-700/30 bg-white/80 px-3 py-2 text-xs font-semibold text-emerald-800">
                 <Filter className="h-3.5 w-3.5" /> Filtros activos
               </div>
             </div>
@@ -581,7 +647,7 @@ function AdminInventory({
             <select
               value={warehouseFilter}
               onChange={(event) => setWarehouseFilter(event.target.value)}
-              className="rounded-full border border-emerald-200/70 bg-white px-4 py-2 text-xs font-semibold text-emerald-700 shadow-inner focus:border-emerald-400 focus:outline-none"
+              className="rounded-full border border-emerald-700/30 bg-white px-4 py-2 text-xs font-semibold text-emerald-800 shadow-inner focus:border-emerald-700 focus:outline-none"
             >
               <option value="ALL">Todos los almacenes</option>
               {warehouses.map((warehouse) => (
@@ -593,7 +659,7 @@ function AdminInventory({
             <select
               value={categoryFilter}
               onChange={(event) => setCategoryFilter(event.target.value)}
-              className="rounded-full border border-emerald-200/70 bg-white px-4 py-2 text-xs font-semibold text-emerald-700 shadow-inner focus:border-emerald-400 focus:outline-none"
+              className="rounded-full border border-emerald-700/30 bg-white px-4 py-2 text-xs font-semibold text-emerald-800 shadow-inner focus:border-emerald-700 focus:outline-none"
             >
               <option value="ALL">Todas las categorías</option>
               {categories.map((category) => (
@@ -605,7 +671,7 @@ function AdminInventory({
             <select
               value={riskFilter}
               onChange={(event) => setRiskFilter(event.target.value as typeof riskFilter)}
-              className="rounded-full border border-emerald-200/70 bg-white px-4 py-2 text-xs font-semibold text-emerald-700 shadow-inner focus:border-emerald-400 focus:outline-none"
+              className="rounded-full border border-emerald-700/30 bg-white px-4 py-2 text-xs font-semibold text-emerald-800 shadow-inner focus:border-emerald-700 focus:outline-none"
             >
               <option value="ALL">Todos los niveles</option>
               <option value="LOW">Solo críticos</option>
@@ -642,16 +708,30 @@ function AdminInventory({
                           <div className="inline-flex gap-2">
                             <button
                               onClick={() => openMovementModal(stock, 'IN')}
-                              className="rounded-full border border-emerald-200 bg-white px-3 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50"
+                              className="rounded-full border border-emerald-700/40 bg-white px-3 py-1 text-xs font-semibold text-emerald-800 transition hover:bg-emerald-50"
                             >
                               Reponer
                             </button>
                             <button
                               onClick={() => openMovementModal(stock, 'OUT')}
-                              className="rounded-full bg-emerald-500 px-3 py-1 text-xs font-semibold text-white shadow hover:bg-emerald-600 disabled:cursor-not-allowed disabled:bg-slate-300"
+                              className="rounded-full bg-emerald-700 px-3 py-1 text-xs font-semibold text-white shadow hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-300"
                               disabled={stock.quantity === 0}
                             >
                               Retirar
+                            </button>
+                            <button
+                              onClick={() => openEditItem(stock.item)}
+                              className="rounded-full border border-blue-700/40 bg-white px-3 py-1 text-xs font-semibold text-blue-800 transition hover:bg-blue-50"
+                              title="Editar item"
+                            >
+                              Editar
+                            </button>
+                            <button
+                              onClick={() => confirmDeleteItem(stock.item)}
+                              className="rounded-full border border-red-700/40 bg-white px-3 py-1 text-xs font-semibold text-red-800 transition hover:bg-red-50"
+                              title="Eliminar item"
+                            >
+                              Eliminar
                             </button>
                           </div>
                         </td>
@@ -762,7 +842,9 @@ function AdminInventory({
               exit={{ scale: 0.95, opacity: 0 }}
               className="w-full max-w-lg rounded-3xl border border-white/20 bg-white/95 p-6 shadow-2xl"
             >
-              <h3 className="text-lg font-semibold text-slate-900">Registrar nuevo item</h3>
+              <h3 className="text-lg font-semibold text-slate-900">
+                {editingItemId ? 'Editar item' : 'Registrar nuevo item'}
+              </h3>
               <p className="text-xs text-slate-500">Define la ficha técnica y el stock mínimo permitido.</p>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <input
@@ -796,14 +878,18 @@ function AdminInventory({
               <div className="mt-6 flex justify-end gap-3">
                 <button
                   type="button"
-                  onClick={() => setShowItemModal(false)}
+                  onClick={() => {
+                    setShowItemModal(false);
+                    setEditingItemId(null);
+                    setItemForm({ sku: '', name: '', category: '', minStock: 1 });
+                  }}
                   className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-emerald-600"
+                  className="rounded-full bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-emerald-800"
                 >
                   Guardar item
                 </button>
@@ -854,7 +940,7 @@ function AdminInventory({
                 </button>
                 <button
                   type="submit"
-                  className="rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-emerald-600"
+                  className="rounded-full bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-emerald-800"
                 >
                   Guardar almacén
                 </button>
@@ -941,7 +1027,7 @@ function AdminInventory({
                 </button>
                 <button
                   type="submit"
-                  className="rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-emerald-600"
+                  className="rounded-full bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-emerald-800"
                 >
                   Confirmar movimiento
                 </button>
@@ -1484,7 +1570,7 @@ function WorkerInventory({
                 <button
                   type="button"
                   onClick={() => submitToolsForTask()}
-                  className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-emerald-600 disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-full bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-emerald-800 disabled:opacity-50"
                   disabled={selectedToolsForTask.length === 0}
                 >
                   <CheckCircle2 className="h-4 w-4" /> Confirmar Herramientas ({selectedToolsForTask.length})
@@ -1562,7 +1648,7 @@ function WorkerInventory({
                 </button>
                 <button
                   type="submit"
-                  className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-emerald-600"
+                  className="inline-flex items-center gap-2 rounded-full bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-emerald-800"
                 >
                   <CheckCircle2 className="h-4 w-4" /> Confirmar
                 </button>

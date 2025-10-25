@@ -11,5 +11,13 @@ export class InventoryStocksRepository {
     return this.repo.findOne({ where: { item: { id: itemId }, warehouse: { id: warehouseId } } });
   }
   save(entity: Partial<InventoryStock>) { return this.repo.save(entity); }
+  deleteByItemId(itemId: string) {
+    return this.repo
+      .createQueryBuilder()
+      .delete()
+      .from(InventoryStock)
+      .where('"itemId" = :itemId', { itemId })
+      .execute();
+  }
 }
 

@@ -36,6 +36,9 @@ export default function Navbar() {
             <Link to="/my-tasks" className="text-white/80 hover:text-white">
               Mis Tareas
             </Link>
+            <Link to="/inventory" className="text-white/80 hover:text-white">
+              Inventario
+            </Link>
             <Link to="/messages" className="text-white/80 hover:text-white">
               Mensajes
             </Link>

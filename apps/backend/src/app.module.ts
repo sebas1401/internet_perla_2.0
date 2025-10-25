@@ -21,17 +21,43 @@ import { RepositoriesModule } from "./repositories/repositories.module";
       rootPath: join(process.cwd(), "uploads"),
       serveRoot: "/uploads",
     }),
-TypeOrmModule.forRootAsync({
-  imports: [ConfigModule],
-  inject: [ConfigService],
-  useFactory: (cfg: ConfigService) => ({
-    type: 'postgres',
-    url: cfg.get('DATABASE_URL'),
-    autoLoadEntities: true,
-    synchronize: cfg.get('DB_SYNC') === 'true',
-    ssl: { rejectUnauthorized: false },
-  }),
-}),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (cfg: ConfigService) => {
+        const sslPref = `${cfg.get('DB_SSL', 'true')}`.toLowerCase();
+        const ssl = ['false', '0', 'off', 'no'].includes(sslPref)
+          ? false
+          : { rejectUnauthorized: false };
+
+        const baseOptions = {
+          type: 'postgres' as const,
+          autoLoadEntities: true,
+          synchronize: cfg.get('DB_SYNC') === 'true',
+          ssl,
+        };
+
+        const databaseUrl = cfg.get<string>('DATABASE_URL');
+        if (databaseUrl) {
+          return {
+            ...baseOptions,
+            url: databaseUrl,
+          };
+        }
+
+        const portValue = cfg.get<string>('DB_PORT') ?? '5432';
+        const port = Number.parseInt(portValue, 10) || 5432;
+
+        return {
+          ...baseOptions,
+          host: cfg.get<string>('DB_HOST') ?? 'localhost',
+          port,
+          username: cfg.get<string>('DB_USERNAME') ?? 'postgres',
+          password: `${cfg.get<string>('DB_PASSWORD') ?? ''}`,
+          database: cfg.get<string>('DB_DATABASE') ?? 'postgres',
+        };
+      },
+    }),
 
     AuthModule,
     RepositoriesModule,
