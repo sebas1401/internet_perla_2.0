@@ -79,6 +79,7 @@ Notas:
 - `user@example.com` / `123456` (USER)
 
 Usuarios de demostración (producción)
+“Si desea ingresar como administrador, conéctese a la base de datos y cambie manualmente el rol del usuario.”
 - Sadie González — `sadie@gmail.com` / `sadie123`
 - Yair Villatoro — `yair@gmail.com` / `yair123`
 - Kelvin Sadie — `kelvin@gmail.com` / `kelvin123`
